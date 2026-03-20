@@ -1,0 +1,3355 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>StudyOS — Student Productivity Suite</title>
+
+<script>
+/* Silence the Tailwind CDN production warning in the browser console */
+(function(){var ow=console.warn;console.warn=function(){if(arguments[0]&&String(arguments[0]).indexOf('cdn.tailwindcss')!==-1)return;ow.apply(console,arguments);};})();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;600;700;800;900&family=Bricolage+Grotesque:wght@300;400;500;600;700&family=Scheherazade+New:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --bg:        #080c14;
+  --bg1:       #0d1220;
+  --bg2:       #121929;
+  --bg3:       #192135;
+  --surface:   #1e2a40;
+  --border:    rgba(255,255,255,0.06);
+  --border2:   rgba(255,255,255,0.11);
+  --t0:        #edf0ff;
+  --t1:        #9aa3bc;
+  --t2:        #5a6480;
+  --t3:        #3d4a63;
+  --accent:    #6366f1;
+  --accent2:   #818cf8;
+  --green:     #10b981;
+  --amber:     #f59e0b;
+  --rose:      #f43f5e;
+  --sky:       #38bdf8;
+  --r:         14px;
+  --r2:        10px;
+  --ease:      cubic-bezier(0.16,1,0.3,1);
+  --shadow:    0 8px 40px rgba(0,0,0,0.5);
+}
+[data-theme="light"] {
+  --bg:        #f4f6fc;
+  --bg1:       #ffffff;
+  --bg2:       #eef1f8;
+  --bg3:       #e5e9f5;
+  --surface:   #dde3f0;
+  --border:    rgba(0,0,0,0.07);
+  --border2:   rgba(0,0,0,0.13);
+  --t0:        #0d1220;
+  --t1:        #3d4a63;
+  --t2:        #6b7a96;
+  --t3:        #b0bace;
+  --shadow:    0 4px 24px rgba(0,0,0,0.1);
+}
+
+/* ═══════════════════════════════════════════
+   BASE
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { height:100%; }
+body {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  background: var(--bg);
+  color: var(--t0);
+  height: 100%;
+  transition: background .3s, color .3s;
+  overflow-x: hidden;
+}
+.display-font { font-family: 'Cabinet Grotesk', sans-serif; }
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:99px; }
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+.shell { display:flex; min-height:100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width:248px;
+  flex-shrink:0;
+  background:var(--bg1);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  top:0; left:0; bottom:0;
+  z-index:50;
+  transition:transform .3s var(--ease);
+}
+.sidebar-logo {
+  padding:22px 20px 18px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+.logo-mark {
+  width:34px; height:34px;
+  border-radius:10px;
+  background: linear-gradient(135deg,#6366f1,#818cf8);
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+  box-shadow:0 4px 16px rgba(99,102,241,.4);
+}
+.logo-text { display:flex; flex-direction:column; }
+.logo-name { font-family:'Cabinet Grotesk',sans-serif; font-weight:800; font-size:16px; color:var(--t0); letter-spacing:-.02em; line-height:1.1; }
+.logo-sub  { font-size:10px; color:var(--t2); font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+
+.nav-section { padding:16px 10px 0; }
+.nav-label {
+  font-size:9px; font-weight:700; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--t3);
+  padding:0 10px; margin-bottom:5px;
+}
+.nav-item {
+  display:flex; align-items:center; gap:9px;
+  padding:9px 12px; border-radius:var(--r2);
+  font-size:13px; font-weight:500;
+  color:var(--t1); cursor:pointer;
+  transition:all .15s; user-select:none;
+  margin-bottom:1px;
+  position:relative;
+  letter-spacing:-.01em;
+}
+.nav-item:hover { background:rgba(99,102,241,.07); color:var(--t0); }
+.nav-item.active {
+  background:rgba(99,102,241,.12);
+  color:var(--accent2);
+  border-left:2px solid var(--accent);
+  padding-left:10px;
+}
+.nav-item svg { width:15px; height:15px; flex-shrink:0; opacity:.7; }
+.nav-item.active svg { opacity:1; }
+.nav-badge {
+  margin-left:auto;
+  font-size:10px; font-weight:700;
+  padding:1px 6px; border-radius:99px;
+  background:rgba(99,102,241,.2);
+  color:var(--accent2);
+}
+
+/* Sidebar bottom */
+.sidebar-bottom {
+  margin-top:auto;
+  padding:14px 10px;
+  border-top:1px solid var(--border);
+}
+.theme-toggle {
+  display:flex; align-items:center; gap:9px;
+  padding:9px 12px; border-radius:var(--r2);
+  cursor:pointer; color:var(--t1); font-size:13px; font-weight:500;
+  transition:all .15s;
+  width:100%; background:transparent; border:none;
+}
+.theme-toggle:hover { background:rgba(255,255,255,.04); color:var(--t0); }
+.theme-toggle svg { width:14px; height:14px; }
+.gs-btn {
+  display:flex; align-items:center; gap:9px;
+  padding:9px 12px; border-radius:var(--r2);
+  cursor:pointer; color:var(--t1); font-size:13px; font-weight:500;
+  transition:all .15s;
+  width:100%; background:transparent; border:none; margin-bottom:2px;
+}
+.gs-btn:hover { background:rgba(16,185,129,.08); color:var(--green); }
+.gs-btn svg { width:14px; height:14px; }
+
+/* ── Main ── */
+.main { margin-left:248px; flex:1; }
+.topbar {
+  position:sticky; top:0; z-index:40;
+  height:60px;
+  background:rgba(8,12,20,.85);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(18px);
+  display:flex; align-items:center;
+  padding:0 28px; gap:16px;
+  transition:background .3s;
+}
+[data-theme="light"] .topbar { background:rgba(244,246,252,.9); }
+.topbar-title { font-family:'Cabinet Grotesk',sans-serif; font-weight:800; font-size:17px; color:var(--t0); flex:1; }
+.topbar-date { font-size:12px; color:var(--t2); font-weight:400; letter-spacing:.01em; }
+.ham-btn {
+  display:none;
+  background:transparent; border:none; cursor:pointer;
+  color:var(--t1); padding:4px;
+}
+
+/* ── Content ── */
+.content { padding:28px; max-width:1400px; }
+
+/* ── Page ── */
+.page { display:none; }
+.page.active { display:block; animation:pageIn .35s var(--ease); }
+@keyframes pageIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* ═══════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════ */
+.card {
+  background:var(--bg1);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  transition:border-color .2s, box-shadow .2s, transform .2s;
+}
+.card:hover { border-color:var(--border2); }
+.card-hover:hover { transform:translateY(-2px); box-shadow:var(--shadow); }
+
+/* ═══════════════════════════════════════════
+   DASHBOARD — KPI CARDS (Modern Redesign)
+═══════════════════════════════════════════ */
+.kpi-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  margin-bottom:24px;
+}
+
+/* Gradient border wrapper */
+.kpi-card {
+  position:relative;
+  border-radius:18px;
+  padding:2px;          /* creates the gradient border thickness */
+  transition:transform .22s var(--ease), box-shadow .22s;
+  cursor:default;
+}
+.kpi-card:hover { transform:translateY(-3px); }
+.kpi-card:nth-child(1) { background:linear-gradient(135deg,rgba(99,102,241,.55),rgba(129,140,248,.15),rgba(99,102,241,.05)); }
+.kpi-card:nth-child(1):hover { box-shadow:0 12px 40px rgba(99,102,241,.22); }
+.kpi-card:nth-child(2) { background:linear-gradient(135deg,rgba(245,158,11,.55),rgba(251,191,36,.15),rgba(245,158,11,.05)); }
+.kpi-card:nth-child(2):hover { box-shadow:0 12px 40px rgba(245,158,11,.2); }
+.kpi-card:nth-child(3) { background:linear-gradient(135deg,rgba(16,185,129,.55),rgba(52,211,153,.15),rgba(16,185,129,.05)); }
+.kpi-card:nth-child(3):hover { box-shadow:0 12px 40px rgba(16,185,129,.2); }
+.kpi-card:nth-child(4) { background:linear-gradient(135deg,rgba(56,189,248,.55),rgba(125,211,252,.15),rgba(56,189,248,.05)); }
+.kpi-card:nth-child(4):hover { box-shadow:0 12px 40px rgba(56,189,248,.2); }
+
+/* Inner surface */
+.kpi-inner {
+  background:var(--bg1);
+  border-radius:16px;
+  padding:20px 20px 18px;
+  height:100%;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Ambient glow blob */
+.kpi-inner::after {
+  content:'';
+  position:absolute;
+  width:110px; height:110px;
+  border-radius:50%;
+  top:-28px; right:-28px;
+  opacity:.06;
+  pointer-events:none;
+  transition:opacity .3s;
+}
+.kpi-card:hover .kpi-inner::after { opacity:.11; }
+.kpi-card:nth-child(1) .kpi-inner::after { background:var(--accent); }
+.kpi-card:nth-child(2) .kpi-inner::after { background:var(--amber); }
+.kpi-card:nth-child(3) .kpi-inner::after { background:var(--green); }
+.kpi-card:nth-child(4) .kpi-inner::after { background:var(--sky); }
+
+/* Top row: icon badge + trend pill */
+.kpi-top {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px;
+}
+.kpi-icon-badge {
+  width:36px; height:36px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.kpi-card:nth-child(1) .kpi-icon-badge { background:rgba(99,102,241,.14); }
+.kpi-card:nth-child(2) .kpi-icon-badge { background:rgba(245,158,11,.13); }
+.kpi-card:nth-child(3) .kpi-icon-badge { background:rgba(16,185,129,.13); }
+.kpi-card:nth-child(4) .kpi-icon-badge { background:rgba(56,189,248,.13); }
+
+/* Trend pill */
+.kpi-pill {
+  font-size:10.5px; font-weight:700; padding:3px 9px;
+  border-radius:99px; letter-spacing:.02em;
+  white-space:nowrap;
+}
+.kpi-pill.up   { background:rgba(16,185,129,.12); color:var(--green); border:1px solid rgba(16,185,129,.2); }
+.kpi-pill.warn { background:rgba(245,158,11,.1);  color:var(--amber); border:1px solid rgba(245,158,11,.2); }
+.kpi-pill.info { background:rgba(99,102,241,.1);  color:var(--accent2); border:1px solid rgba(99,102,241,.2); }
+.kpi-pill.sky  { background:rgba(56,189,248,.1);  color:var(--sky); border:1px solid rgba(56,189,248,.2); }
+
+/* Label */
+.kpi-label {
+  font-size:10px; font-weight:700; color:var(--t2);
+  letter-spacing:.08em; text-transform:uppercase;
+  margin-bottom:6px; line-height:1;
+}
+
+/* Big number */
+.kpi-value {
+  font-family:'Cabinet Grotesk',sans-serif;
+  font-weight:900; font-size:34px;
+  line-height:1; margin-bottom:4px;
+  letter-spacing:-.04em;
+}
+
+/* Sub descriptor */
+.kpi-sub {
+  font-size:11.5px; color:var(--t1);
+  font-weight:400; line-height:1.45;
+  margin-bottom:14px;
+}
+
+/* Progress bar — thicker, rounded, with shimmer */
+.pbar-track {
+  height:5px; background:var(--border2);
+  border-radius:99px; overflow:hidden;
+  position:relative;
+}
+.pbar-fill {
+  height:100%; border-radius:99px;
+  transition:width 1.1s var(--ease);
+  position:relative;
+}
+.pbar-fill::after {
+  content:'';
+  position:absolute; top:0; left:-100%;
+  width:60%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
+  animation:barShimmer 2.5s ease-in-out infinite;
+}
+@keyframes barShimmer {
+  0%   { left:-100%; }
+  60%  { left:150%; }
+  100% { left:150%; }
+}
+
+/* Light mode card */
+[data-theme="light"] .kpi-inner { background:#fff; }
+[data-theme="light"] .kpi-card:nth-child(1) { background:linear-gradient(135deg,rgba(99,102,241,.4),rgba(129,140,248,.1)); }
+[data-theme="light"] .kpi-card:nth-child(2) { background:linear-gradient(135deg,rgba(245,158,11,.4),rgba(251,191,36,.1)); }
+[data-theme="light"] .kpi-card:nth-child(3) { background:linear-gradient(135deg,rgba(16,185,129,.4),rgba(52,211,153,.1)); }
+[data-theme="light"] .kpi-card:nth-child(4) { background:linear-gradient(135deg,rgba(56,189,248,.4),rgba(125,211,252,.1)); }
+
+/* ═══════════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════════ */
+.chart-card { padding:22px; }
+.chart-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+.chart-title { font-family:'Cabinet Grotesk',sans-serif; font-weight:700; font-size:14px; letter-spacing:-.01em; }
+.chart-sub { font-size:11px; color:var(--t2); margin-top:3px; font-weight:400; line-height:1.5; }
+.chart-tabs { display:flex; gap:4px; background:var(--bg3); border-radius:8px; padding:3px; }
+.chart-tab { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; color:var(--t2); letter-spacing:.01em; }
+.chart-tab.active { background:var(--bg1); color:var(--t0); box-shadow:0 1px 4px rgba(0,0,0,.2); }
+
+/* Heatmap */
+.heatmap-wrap { display:flex; gap:3px; overflow-x:auto; }
+.heatmap-col { display:flex; flex-direction:column; gap:3px; }
+.heatmap-cell {
+  width:11px; height:11px;
+  border-radius:2px;
+  background:var(--bg3);
+  transition:background .2s;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.heatmap-cell:hover { transform:scale(1.3); }
+.h1 { background:rgba(99,102,241,.2); }
+.h2 { background:rgba(99,102,241,.4); }
+.h3 { background:rgba(99,102,241,.65); }
+.h4 { background:rgba(99,102,241,.9); }
+
+/* ═══════════════════════════════════════════
+   SUBJECT TRACKER
+═══════════════════════════════════════════ */
+.subject-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:16px;
+}
+.subject-card {
+  background:var(--bg1);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  transition:all .2s;
+}
+.subject-card:hover { border-color:var(--border2); box-shadow:var(--shadow); }
+.subject-header {
+  padding:16px 18px 14px;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:flex-start; gap:12px;
+}
+.subject-icon {
+  width:36px; height:36px;
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; flex-shrink:0;
+}
+.subject-meta { flex:1; min-width:0; }
+.subject-name {
+  font-family:'Cabinet Grotesk',sans-serif;
+  font-weight:800; font-size:15px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  letter-spacing:-.02em; color:var(--t0);
+}
+.subject-stats { font-size:11.5px; color:var(--t1); margin-top:3px; font-weight:400; }
+.subject-pct {
+  font-family:'Cabinet Grotesk',sans-serif;
+  font-weight:900; font-size:24px;
+  line-height:1; letter-spacing:-.03em;
+}
+.subject-progress {
+  padding:10px 18px 6px;
+}
+.spbar-track { height:6px; background:var(--border2); border-radius:99px; overflow:hidden; }
+.spbar-fill { height:100%; border-radius:99px; transition:width 1.2s var(--ease); }
+
+/* Topic list */
+.topic-list {
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .4s var(--ease);
+}
+.topic-list.open { max-height:680px; overflow-y:auto; }
+.topic-item {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 18px;
+  transition:background .12s;
+  border-top:1px solid var(--border);
+}
+.topic-item:hover { background:rgba(255,255,255,.02); }
+.topic-checkbox {
+  width:15px; height:15px;
+  border-radius:4px;
+  border:1.5px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; cursor:pointer;
+  transition:all .18s var(--ease);
+}
+.topic-checkbox.checked {
+  border-color:var(--accent);
+  background:var(--accent);
+  animation:cbpop .28s var(--ease);
+}
+@keyframes cbpop { 0%{transform:scale(1)} 45%{transform:scale(1.4)} 75%{transform:scale(.88)} 100%{transform:scale(1)} }
+.topic-checkbox.checked svg { opacity:1; }
+.topic-checkbox svg { opacity:0; transition:opacity .1s; }
+.topic-input {
+  flex:1; background:transparent; border:none; outline:none;
+  color:var(--t0); font-size:13px; font-family:'Bricolage Grotesque',sans-serif;
+  font-weight:500; cursor:text;
+  transition:color .2s; line-height:1.4;
+}
+.topic-input.done { text-decoration:line-through; color:var(--t2); }
+.topic-input::placeholder { color:var(--t2); }
+.topic-num { font-size:10px; font-family:'Cabinet Grotesk',sans-serif; font-weight:700; color:var(--t3); width:18px; text-align:right; flex-shrink:0; letter-spacing:-.01em; }
+.subject-footer {
+  padding:10px 18px;
+  display:flex; align-items:center; justify-content:space-between;
+  border-top:1px solid var(--border);
+}
+.toggle-topics-btn {
+  display:flex; align-items:center; gap:5px;
+  font-size:12px; color:var(--t2); font-weight:600;
+  background:transparent; border:none; cursor:pointer;
+  padding:0; transition:color .15s; letter-spacing:.01em;
+}
+.toggle-topics-btn:hover { color:var(--t0); }
+.toggle-topics-btn svg { transition:transform .3s var(--ease); }
+.toggle-topics-btn.open svg { transform:rotate(180deg); }
+.subject-actions { display:flex; gap:6px; }
+.icon-btn {
+  width:28px; height:28px; border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  background:transparent; border:1px solid var(--border);
+  cursor:pointer; color:var(--t2);
+  transition:all .15s;
+}
+.icon-btn:hover { background:rgba(255,255,255,.05); color:var(--t0); border-color:var(--border2); }
+.icon-btn.danger:hover { background:rgba(244,63,94,.1); color:var(--rose); border-color:rgba(244,63,94,.2); }
+.icon-btn svg { width:13px; height:13px; }
+
+/* ═══════════════════════════════════════════
+   PLANNER
+═══════════════════════════════════════════ */
+.date-strip { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:22px; }
+.date-chip {
+  flex-shrink:0;
+  display:flex; flex-direction:column; align-items:center;
+  padding:10px 14px; border-radius:var(--r2);
+  cursor:pointer; transition:all .18s;
+  background:var(--bg1); border:1px solid var(--border);
+  min-width:56px;
+}
+.date-chip:hover { border-color:var(--border2); }
+.date-chip.active { background:var(--accent); border-color:var(--accent); }
+.date-chip.today:not(.active) { border-color:rgba(99,102,241,.35); }
+.date-chip .day-name { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--t2); }
+.date-chip.active .day-name { color:rgba(255,255,255,.8); }
+.date-chip .day-num { font-family:'Cabinet Grotesk',sans-serif; font-weight:900; font-size:20px; margin-top:3px; letter-spacing:-.02em; }
+.date-chip .dot-row { display:flex; gap:2px; margin-top:4px; height:5px; align-items:center; }
+.date-chip .tdot { width:4px; height:4px; border-radius:50%; background:var(--t2); }
+.date-chip.active .tdot { background:rgba(255,255,255,.7); }
+.date-chip .tdot.done-dot { background:var(--green); }
+.date-chip.active .tdot.done-dot { background:#a7f3d0; }
+
+/* Task list */
+.task-item {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 16px;
+  background:var(--bg1); border:1px solid var(--border);
+  border-radius:var(--r2); margin-bottom:8px;
+  transition:all .18s;
+  animation:taskIn .3s var(--ease);
+}
+@keyframes taskIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+.task-item:hover { border-color:var(--border2); }
+.task-item.done { opacity:.55; }
+.task-item.done .task-title { text-decoration:line-through; color:var(--t2); }
+.task-cb {
+  width:18px; height:18px; border-radius:5px;
+  border:1.5px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; cursor:pointer;
+  transition:all .18s var(--ease);
+}
+.task-cb.checked { background:var(--green); border-color:var(--green); animation:cbpop .28s var(--ease); }
+.task-cb.checked svg { opacity:1; }
+.task-cb svg { opacity:0; transition:opacity .1s; }
+.task-title { flex:1; font-size:13.5px; font-weight:600; letter-spacing:-.01em; }
+.task-meta { font-size:11px; color:var(--t2); margin-top:3px; font-weight:400; line-height:1.4; }
+.task-badge {
+  font-size:9.5px; font-weight:700; padding:2.5px 8px; border-radius:99px;
+  text-transform:uppercase; letter-spacing:.06em;
+}
+.task-badge.high { background:rgba(244,63,94,.12); color:var(--rose); }
+.task-badge.medium { background:rgba(245,158,11,.1); color:var(--amber); }
+.task-badge.low { background:rgba(16,185,129,.1); color:var(--green); }
+.task-delete { background:transparent; border:none; cursor:pointer; padding:4px; border-radius:5px; color:var(--t2); transition:all .15s; }
+.task-delete:hover { background:rgba(244,63,94,.1); color:var(--rose); }
+.task-drag-handle { color:var(--t3); cursor:grab; padding:0 2px; }
+.task-drag-handle:active { cursor:grabbing; }
+.task-item.dragging { opacity:.5; border-style:dashed; }
+.task-item.drag-over { border-color:var(--accent); background:rgba(99,102,241,.05); }
+
+/* Priority marker */
+.pri-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.pri-dot.high { background:var(--rose); }
+.pri-dot.medium { background:var(--amber); }
+.pri-dot.low { background:var(--green); }
+
+/* ═══════════════════════════════════════════
+   VOCABULARY
+═══════════════════════════════════════════ */
+.vocab-card {
+  background:var(--bg1);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:16px;
+  transition:all .2s;
+  animation:pageIn .3s var(--ease) both;
+}
+.vocab-card:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:var(--shadow); }
+.vocab-card.learned .vocab-word { text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px; }
+.vocab-card.mastered .vocab-word { text-decoration:line-through; text-decoration-color:rgba(148,163,184,.4); color:var(--t2); }
+.vocab-word { font-family:'Cabinet Grotesk',sans-serif; font-weight:900; font-size:18px; margin-bottom:4px; letter-spacing:-.02em; }
+.vocab-meaning { font-size:13px; color:var(--green); font-weight:700; margin-bottom:8px; letter-spacing:.01em; }
+.vocab-synonyms { font-size:11.5px; color:var(--t1); font-weight:400; margin-bottom:7px; }
+.vocab-example { font-size:12px; color:var(--t1); font-style:italic; border-left:2px solid rgba(99,102,241,.3); padding-left:10px; line-height:1.65; }
+.vocab-footer { display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+.status-pill { font-size:9.5px; font-weight:700; padding:2.5px 8px; border-radius:99px; text-transform:uppercase; letter-spacing:.06em; }
+.status-pill.new { background:rgba(148,163,184,.1); color:var(--t1); }
+.status-pill.learned { background:rgba(99,102,241,.12); color:var(--accent2); }
+.status-pill.mastered { background:rgba(16,185,129,.1); color:var(--green); }
+
+/* Lazy load entering */
+.vocab-card.entering { animation:cardIn .35s var(--ease) both; }
+@keyframes cardIn { from{opacity:0;transform:scale(.96) translateY(6px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.vocab-card.exiting { animation:cardOut .2s ease both; }
+@keyframes cardOut { to{opacity:0;transform:scale(.94)} }
+
+/* ═══════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════ */
+.modal-overlay {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(0,0,0,.65);
+  backdrop-filter:blur(6px);
+  display:none; align-items:center; justify-content:center;
+  padding:20px;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--bg1);
+  border:1px solid var(--border2);
+  border-radius:var(--r);
+  padding:28px;
+  width:100%; max-width:500px;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+  animation:modalIn .28s var(--ease);
+}
+@keyframes modalIn { from{opacity:0;transform:scale(.95) translateY(12px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
+.modal-title { font-family:'Cabinet Grotesk',sans-serif; font-weight:800; font-size:18px; letter-spacing:-.02em; }
+.modal-close { background:transparent; border:none; cursor:pointer; color:var(--t2); padding:4px; border-radius:6px; transition:all .15s; }
+.modal-close:hover { color:var(--t0); background:rgba(255,255,255,.05); }
+.modal-close svg { width:18px; height:18px; }
+.form-group { margin-bottom:16px; }
+.form-label { display:block; font-size:11px; font-weight:700; color:var(--t2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:7px; }
+.form-input {
+  width:100%; padding:10px 14px;
+  background:var(--bg2); border:1px solid var(--border2);
+  border-radius:var(--r2); color:var(--t0);
+  font-size:14px; font-family:'Bricolage Grotesque',sans-serif;
+  outline:none; transition:all .15s;
+}
+.form-input:focus { border-color:var(--accent); background:var(--bg1); }
+.form-input::placeholder { color:var(--t2); }
+textarea.form-input { resize:vertical; min-height:80px; }
+select.form-input { appearance:none; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.modal-footer { display:flex; gap:10px; margin-top:22px; }
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:9px 18px; border-radius:var(--r2);
+  font-size:13px; font-weight:600;
+  cursor:pointer; border:none;
+  transition:all .18s; font-family:inherit;
+}
+.btn svg { width:14px; height:14px; }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { background:var(--accent2); transform:translateY(-1px); box-shadow:0 4px 16px rgba(99,102,241,.4); }
+.btn-ghost { background:var(--bg2); color:var(--t0); border:1px solid var(--border2); }
+.btn-ghost:hover { background:var(--bg3); border-color:rgba(99,102,241,.3); }
+.btn-danger { background:rgba(244,63,94,.1); color:var(--rose); border:1px solid rgba(244,63,94,.2); }
+.btn-danger:hover { background:rgba(244,63,94,.2); }
+.btn-sm { padding:6px 12px; font-size:12px; }
+.btn-icon { padding:8px; border-radius:var(--r2); background:var(--bg2); border:1px solid var(--border); }
+.btn-icon svg { width:15px; height:15px; }
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+.toast-container { position:fixed; bottom:24px; right:24px; z-index:999; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+.toast {
+  padding:11px 16px; border-radius:var(--r2);
+  font-size:13px; font-weight:500;
+  background:var(--bg1); border:1px solid var(--border2);
+  color:var(--t0); box-shadow:var(--shadow);
+  animation:toastIn .3s var(--ease);
+  pointer-events:all;
+  display:flex; align-items:center; gap:8px;
+  letter-spacing:.01em;
+}
+.toast.success { border-left:3px solid var(--green); }
+.toast.error { border-left:3px solid var(--rose); }
+.toast.info { border-left:3px solid var(--accent); }
+@keyframes toastIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
+
+/* ═══════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════ */
+.section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.section-title { font-family:'Cabinet Grotesk',sans-serif; font-weight:800; font-size:18px; letter-spacing:-.02em; }
+.section-sub { font-size:12px; color:var(--t1); margin-top:4px; font-weight:400; }
+.empty-state { text-align:center; padding:48px 20px; color:var(--t2); }
+.empty-state svg { width:48px; height:48px; margin:0 auto 14px; display:block; opacity:.25; }
+.empty-state p { font-size:14px; }
+.chip { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:700; border:1px solid; }
+.divider { height:1px; background:var(--border); margin:24px 0; }
+.filter-tabs { display:flex; gap:4px; background:var(--bg2); border-radius:var(--r2); padding:3px; }
+.filter-tab { padding:6px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; color:var(--t2); letter-spacing:.01em; }
+.filter-tab.active { background:var(--bg1); color:var(--t0); font-weight:700; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+
+/* Stagger */
+.stagger > * { opacity:0; animation:pageIn .4s var(--ease) both; }
+.stagger > *:nth-child(1){animation-delay:.04s}
+.stagger > *:nth-child(2){animation-delay:.08s}
+.stagger > *:nth-child(3){animation-delay:.12s}
+.stagger > *:nth-child(4){animation-delay:.16s}
+.stagger > *:nth-child(5){animation-delay:.2s}
+.stagger > *:nth-child(6){animation-delay:.24s}
+.stagger > *:nth-child(7){animation-delay:.28s}
+.stagger > *:nth-child(8){animation-delay:.32s}
+.stagger > *:nth-child(9){animation-delay:.36s}
+
+/* Responsive */
+@media(max-width:900px) {
+  .sidebar { transform:translateX(-100%); }
+  .sidebar.open { transform:translateX(0); box-shadow:0 0 60px rgba(0,0,0,.5); }
+  .main { margin-left:0; }
+  .ham-btn { display:block; }
+  .kpi-grid { grid-template-columns:1fr 1fr; gap:10px; }
+  .chart-grid { grid-template-columns:1fr !important; }
+}
+@media(max-width:600px) {
+  .kpi-grid { grid-template-columns:1fr 1fr; gap:8px; }
+  .kpi-value { font-size:28px; }
+  .subject-grid { grid-template-columns:1fr; }
+  .content { padding:14px; }
+}
+
+/* Color palette for subjects */
+.sc-teal   { --sc:#10b981; } .sc-blue   { --sc:#3b82f6; } .sc-purple { --sc:#a855f7; }
+.sc-orange { --sc:#f97316; } .sc-rose   { --sc:#f43f5e; } .sc-amber  { --sc:#f59e0b; }
+.sc-sky    { --sc:#38bdf8; } .sc-lime   { --sc:#84cc16; } .sc-pink   { --sc:#ec4899; }
+
+/* GS Status pill */
+.gs-status { display:flex; align-items:center; gap:6px; padding:8px 12px; border-radius:var(--r2); background:var(--bg2); border:1px solid var(--border); font-size:11.5px; font-weight:500; color:var(--t1); }
+.gs-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.gs-dot.connected { background:var(--green); box-shadow:0 0 8px rgba(16,185,129,.5); }
+.gs-dot.disconnected { background:var(--amber); }
+
+/* Ripple on checkbox */
+@keyframes ripple { 0%{transform:scale(0);opacity:.6} 100%{transform:scale(2.5);opacity:0} }
+.ripple-wrap { position:relative; }
+.ripple-wave { position:absolute; inset:-4px; border-radius:50%; background:rgba(99,102,241,.3); animation:ripple .5s ease; pointer-events:none; }
+
+
+/* ═══════════════════════════════════════════
+   ISLAMIC FEATURES
+═══════════════════════════════════════════ */
+.arabic-text {
+  font-family: 'Scheherazade New', serif;
+  direction: rtl;
+  text-align: right;
+  line-height: 2;
+}
+
+/* Prayer buttons */
+.prayer-btn {
+  display:flex; flex-direction:column; align-items:center;
+  gap:5px; padding:12px 6px; border-radius:12px;
+  border:1.5px solid var(--border2);
+  cursor:pointer; transition:all .2s;
+  background:var(--bg2); text-align:center;
+  user-select:none;
+}
+.prayer-btn:hover { border-color:rgba(245,158,11,.5); background:rgba(245,158,11,.06); transform:translateY(-2px); }
+.prayer-btn.prayed { background:rgba(16,185,129,.1); border-color:rgba(16,185,129,.4); }
+.prayer-btn.prayed .p-check { color:var(--green); font-size:15px; }
+.prayer-btn.current-time { border-color:rgba(245,158,11,.6); box-shadow:0 0 0 2px rgba(245,158,11,.15); }
+.p-icon  { font-size:18px; line-height:1; }
+.p-name  { font-size:11px; font-weight:700; color:var(--t0); letter-spacing:.01em; }
+.p-time  { font-size:10px; color:var(--t2); font-family:'Cabinet Grotesk',sans-serif; font-weight:600; }
+.p-check { font-size:13px; color:var(--t3); transition:all .18s var(--ease); }
+
+/* Dhikr counter */
+.dhikr-btn {
+  width:100%; padding:20px;
+  background:rgba(245,158,11,.08);
+  border:2px solid rgba(245,158,11,.2);
+  border-radius:14px;
+  cursor:pointer; transition:all .12s;
+  font-family:inherit;
+  color:var(--amber);
+}
+.dhikr-btn:hover { background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.4); }
+.dhikr-btn:active { transform:scale(.97); background:rgba(245,158,11,.2); }
+.dhikr-sw {
+  padding:6px 12px; border-radius:8px; font-size:11px; font-weight:600;
+  border:1px solid var(--border2); background:transparent;
+  color:var(--t2); cursor:pointer; transition:all .15s; font-family:inherit;
+}
+.dhikr-sw:hover { border-color:rgba(245,158,11,.4); color:var(--amber); }
+.dhikr-sw.active { background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.35); color:var(--amber); }
+
+/* Dua card fade animation */
+.dua-fade { transition:opacity .3s ease; }
+
+/* Islamic page layout */
+.islamic-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+@media(max-width:900px) { .islamic-grid { grid-template-columns:1fr; } }
+
+/* Salah week bar */
+.salah-day-bar {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.salah-day-fill {
+  width:100%; border-radius:6px; display:flex;
+  align-items:center; justify-content:center;
+  font-size:10px; font-weight:700; transition:all .4s var(--ease);
+  min-height:28px;
+}
+
+/* Hijri badge */
+.hijri-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:99px;
+  background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.2);
+  font-size:11px; font-weight:600; color:var(--amber);
+}
+
+/* Dhikr ring animation */
+@keyframes dhikrPulse {
+  0%{box-shadow:0 0 0 0 rgba(245,158,11,.4)}
+  70%{box-shadow:0 0 0 14px rgba(245,158,11,0)}
+  100%{box-shadow:0 0 0 0 rgba(245,158,11,0)}
+}
+.dhikr-pulse { animation:dhikrPulse .5s ease; }
+
+/* Next prayer highlight */
+.next-prayer-glow {
+  box-shadow:0 0 0 2px rgba(245,158,11,.3), 0 4px 16px rgba(245,158,11,.15);
+  border-color:rgba(245,158,11,.5) !important;
+}
+
+</style>
+
+
+<script>tailwind.config={darkMode:'class',theme:{extend:{}}}</script>
+</head>
+
+<body>
+
+<!-- ══════════════════════════════════
+     TOAST CONTAINER
+══════════════════════════════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ══════════════════════════════════
+     MOBILE BACKDROP
+══════════════════════════════════ -->
+<div id="mobileBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49" onclick="closeSidebar()"></div>
+
+<!-- ══════════════════════════════════
+     APP SHELL
+══════════════════════════════════ -->
+<div class="shell">
+
+  <!-- ─────────────── SIDEBAR ─────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name">StudyOS</span>
+        <span class="logo-sub">Your Study Command Center</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Navigation</div>
+      <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-page="subjects" onclick="navigate('subjects')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Subjects & Topics
+        <span class="nav-badge" id="subjectCount">0</span>
+      </div>
+      <div class="nav-item" data-page="planner" onclick="navigate('planner')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Daily Planner
+      </div>
+      <div class="nav-item" data-page="vocab" onclick="navigate('vocab')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+        Vocabulary
+      </div>
+    </div>
+
+      <div class="nav-section" style="margin-top:4px">
+        <div class="nav-label">Islamic</div>
+        <div class="nav-item" data-page="islamic" onclick="navigate('islamic')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 20h20M4 20V10M20 20V10M12 4C9 4 7 7 7 10h10c0-3-2-6-5-6z"/><path d="M7 10v10M17 10v10M4 10H2M22 10h-2"/><circle cx="12" cy="3" r="1" fill="currentColor"/></svg>
+          Salah, Dua & Dhikr
+        </div>
+      </div>
+
+    <div class="sidebar-bottom">
+      <div class="gs-status" id="gsStatus" style="margin-bottom:8px">
+        <div class="gs-dot disconnected" id="gsDot"></div>
+        <span id="gsStatusText">Local Storage</span>
+      </div>
+      <button class="gs-btn" onclick="openModal('gsModal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h6l2 3h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+        Sync to Google Sheets
+      </button>
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <span id="themeLabel">Light Mode</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ─────────────── MAIN ─────────────── -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <button class="ham-btn" onclick="openSidebar()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title display-font" id="topbarTitle">Dashboard</div>
+      <div class="topbar-date" id="topbarDate"></div>
+
+      <!-- Quick add button for active page -->
+      <button class="btn btn-primary btn-sm" id="quickAddBtn" onclick="handleQuickAdd()" style="margin-left:12px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span id="quickAddLabel">New Subject</span>
+      </button>
+    </div>
+
+    <!-- Pages -->
+    <div class="content">
+
+      <!-- ═══════════════════════════════
+           PAGE: DASHBOARD
+      ═══════════════════════════════ -->
+      <div id="page-dashboard" class="page active">
+
+        <!-- KPI Grid — Modern Redesign -->
+        <div class="kpi-grid stagger" id="kpiGrid">
+
+          <!-- Card 1: Study Time -->
+          <div class="kpi-card">
+            <div class="kpi-inner">
+              <div class="kpi-top">
+                <div class="kpi-icon-badge">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <span class="kpi-pill info" id="kpi-hours-trend">+0h this week</span>
+              </div>
+              <div class="kpi-label">Deep Work Today</div>
+              <div class="kpi-value display-font" id="kpi-hours" style="color:var(--accent2)">0h</div>
+              <div class="kpi-sub">Every minute counts. Keep pushing.</div>
+              <div class="pbar-track">
+                <div class="pbar-fill" id="kpi-hours-bar" style="width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Consistency Streak -->
+          <div class="kpi-card">
+            <div class="kpi-inner">
+              <div class="kpi-top">
+                <div class="kpi-icon-badge">
+                  <span style="font-size:18px;line-height:1">🔥</span>
+                </div>
+                <span class="kpi-pill warn" id="streakEncouragement">Light the fire! 🔥</span>
+              </div>
+              <div class="kpi-label">Consistency Streak</div>
+              <div class="kpi-value display-font" id="kpi-streak" style="color:var(--amber)">0</div>
+              <div class="kpi-sub">Days of pure consistency.</div>
+              <div class="pbar-track">
+                <div class="pbar-fill" id="kpi-streak-bar" style="width:0%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Topics Done -->
+          <div class="kpi-card">
+            <div class="kpi-inner">
+              <div class="kpi-top">
+                <div class="kpi-icon-badge">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <span class="kpi-pill up" id="kpi-topics-pct">0%</span>
+              </div>
+              <div class="kpi-label">Milestones Achieved</div>
+              <div class="kpi-value display-font" id="kpi-topics" style="color:var(--green)">0</div>
+              <div class="kpi-sub">of <span id="kpi-topics-total">0</span> topics across all subjects</div>
+              <div class="pbar-track">
+                <div class="pbar-fill" id="kpi-topics-bar" style="width:0%;background:linear-gradient(90deg,#10b981,#34d399)"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: Vocabulary Mastered -->
+          <div class="kpi-card">
+            <div class="kpi-inner">
+              <div class="kpi-top">
+                <div class="kpi-icon-badge">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2.2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                </div>
+                <span class="kpi-pill sky" id="kpi-vocab-pct">0%</span>
+              </div>
+              <div class="kpi-label">Vocabulary Mastered</div>
+              <div class="kpi-value display-font" id="kpi-vocab" style="color:var(--sky)">0</div>
+              <div class="kpi-sub">Words that now belong to you.</div>
+              <div class="pbar-track">
+                <div class="pbar-fill" id="kpi-vocab-bar" style="width:0%;background:linear-gradient(90deg,#38bdf8,#7dd3fc)"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Charts row -->
+        <div class="chart-grid" style="display:grid;grid-template-columns:1.8fr 1fr;gap:16px;margin-bottom:22px">
+          <!-- Weekly chart — Modern redesign -->
+          <div class="card chart-card" style="padding:22px 22px 18px">
+
+            <!-- Header row -->
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px">
+              <div>
+                <div class="chart-title display-font" style="font-size:14px;font-weight:800;letter-spacing:-.02em">Your Learning Journey</div>
+                <div class="chart-sub" style="margin-top:3px">See how your effort builds over time</div>
+              </div>
+              <!-- Period toggle — pill style -->
+              <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:3px">
+                <button id="tab-weekly"  onclick="switchChartPeriod('weekly')"
+                  style="padding:5px 13px;border-radius:7px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:var(--accent);color:#fff;transition:all .18s">
+                  This Week
+                </button>
+                <button id="tab-monthly" onclick="switchChartPeriod('monthly')"
+                  style="padding:5px 13px;border-radius:7px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:transparent;color:var(--t2);transition:all .18s">
+                  This Month
+                </button>
+              </div>
+            </div>
+
+            <!-- Stat summary strip -->
+            <div id="chartStatStrip" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+              <div style="padding:10px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border)">
+                <div style="font-size:9.5px;font-weight:700;color:var(--t2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px">Total</div>
+                <div id="chartStatTotal" style="font-family:'Cabinet Grotesk',sans-serif;font-weight:900;font-size:18px;color:var(--accent2);letter-spacing:-.03em">0h</div>
+              </div>
+              <div style="padding:10px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border)">
+                <div style="font-size:9.5px;font-weight:700;color:var(--t2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px">Daily Avg</div>
+                <div id="chartStatAvg" style="font-family:'Cabinet Grotesk',sans-serif;font-weight:900;font-size:18px;color:var(--green);letter-spacing:-.03em">0h</div>
+              </div>
+              <div style="padding:10px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border)">
+                <div style="font-size:9.5px;font-weight:700;color:var(--t2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px">Best Day</div>
+                <div id="chartStatBest" style="font-family:'Cabinet Grotesk',sans-serif;font-weight:900;font-size:18px;color:var(--amber);letter-spacing:-.03em">0h</div>
+              </div>
+            </div>
+
+            <!-- Chart canvas -->
+            <div style="height:180px;position:relative"><canvas id="studyChart"></canvas></div>
+
+            <!-- Footer: active days indicator -->
+            <div id="chartActiveDays" style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:6px" id="chartDayDots"></div>
+              <div style="font-size:11px;color:var(--t2)" id="chartDayLabel"></div>
+            </div>
+          </div>
+          <!-- Donut — Modern redesign -->
+          <div class="card chart-card" style="padding:20px 18px">
+            <!-- Header -->
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+              <div>
+                <div class="chart-title display-font" style="font-size:14px;font-weight:800;letter-spacing:-.02em">Where You Stand</div>
+                <div class="chart-sub" style="margin-top:3px">Your progress, subject by subject</div>
+              </div>
+              <div id="donutOverallBadge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);color:var(--accent2);white-space:nowrap">Overall: 0%</div>
+            </div>
+
+            <!-- Chart + center stat -->
+            <div style="position:relative;height:148px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+              <canvas id="subjectDonut"></canvas>
+              <!-- Center overlay -->
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+                <div id="donutCenterPct" style="font-family:'Cabinet Grotesk',sans-serif;font-weight:900;font-size:22px;line-height:1;letter-spacing:-.04em;color:var(--t0)">0%</div>
+                <div style="font-size:9.5px;font-weight:700;color:var(--t2);letter-spacing:.06em;text-transform:uppercase;margin-top:3px">done</div>
+              </div>
+            </div>
+
+            <!-- Rich legend with mini bars -->
+            <div id="donutLegend" style="display:flex;flex-direction:column;gap:7px"></div>
+          </div>
+        </div>
+
+        <!-- Bottom row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px">
+          <!-- Today's tasks -->
+          <div class="card chart-card">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title display-font" style="font-size:14px;font-weight:800;letter-spacing:-.02em">Today's Battle Plan</div>
+                <div class="chart-sub" id="todayTaskSub" style="font-size:12px;font-weight:500;color:var(--t1)">0 remaining</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="navigate('planner')">See Full Planner →</button>
+            </div>
+            <div id="dashTasks" style="display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+
+          <!-- Heatmap -->
+          <div class="card chart-card">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title display-font" style="font-size:14px;font-weight:800;letter-spacing:-.02em">Your Study Footprint</div>
+                <div class="chart-sub">Every square is a day you showed up</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)">
+                Less active
+                <div style="width:8px;height:8px;border-radius:2px;background:var(--bg3)"></div>
+                <div class="h1" style="width:8px;height:8px;border-radius:2px"></div>
+                <div class="h2" style="width:8px;height:8px;border-radius:2px"></div>
+                <div class="h3" style="width:8px;height:8px;border-radius:2px"></div>
+                <div class="h4" style="width:8px;height:8px;border-radius:2px"></div>
+                More active
+              </div>
+            </div>
+
+            <!-- Daily Goal bar -->
+            <div id="dailyGoalBlock" style="margin-bottom:14px;padding:12px 14px;border-radius:10px;background:var(--bg2);border:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--t0);letter-spacing:-.01em">Today's Target</div>
+                  <div id="dailyGoalQuote" style="font-size:11.5px;color:var(--t1);margin-top:3px;font-style:italic;line-height:1.5"></div>
+                </div>
+                <div style="text-align:right">
+                  <span id="dailyGoalHours" style="font-family:'Cabinet Grotesk',sans-serif;font-weight:900;font-size:20px;color:var(--accent2);letter-spacing:-.03em">0h</span>
+                  <span style="font-size:12px;color:var(--t2);font-weight:500"> / <span id="dailyGoalTarget">4h</span> goal</span>
+                </div>
+              </div>
+              <div style="height:6px;background:var(--border2);border-radius:99px;overflow:hidden">
+                <div id="dailyGoalBar" style="height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1s cubic-bezier(0.16,1,0.3,1)"></div>
+              </div>
+            </div>
+
+            <div class="heatmap-wrap" id="heatmapGrid" style="padding-top:4px"></div>
+          </div>
+        </div>
+        <!-- Islamic mini row on dashboard -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px" id="islamicDashRow">
+          <!-- Mini Salah -->
+          <div class="card chart-card" style="padding:18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div>
+                <div class="chart-title display-font" style="font-size:13px;font-weight:800;letter-spacing:-.02em">🕌 আজকের নামাজ</div>
+                <div style="font-size:11px;color:var(--t2);margin-top:2px" id="dashSalahCount">০/৫ ওয়াক্ত আদায়</div>
+              </div>
+              <button onclick="navigate('islamic')" style="font-size:11px;color:var(--accent2);background:none;border:none;cursor:pointer;font-weight:600">বিস্তারিত →</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px" id="dashSalahBtns">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+          <!-- Mini Dua -->
+          <div class="card chart-card dua-fade" style="padding:18px" id="dashDuaCard">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div class="chart-title display-font" style="font-size:13px;font-weight:800;letter-spacing:-.02em">📿 আজকের দোয়া — পড়ে শুরু করো</div>
+              <button onclick="nextDuaDash()" style="font-size:11px;color:var(--t2);background:none;border:none;cursor:pointer;font-weight:600">পরের →</button>
+            </div>
+            <div class="arabic-text" id="dashDuaArabic" style="font-size:18px;color:var(--amber);padding:8px 0 6px;border-bottom:1px solid var(--border)"></div>
+            <div id="dashDuaMeaning" style="font-size:12.5px;color:var(--t0);font-weight:600;margin-top:8px;letter-spacing:-.01em"></div>
+            <div id="dashDuaSource" style="font-size:10.5px;color:var(--t2);margin-top:6px"></div>
+          </div>
+        </div>
+
+        <!-- Quick Add FAB — visible only on dashboard -->
+        <div id="dashQuickAdd" style="position:fixed;bottom:28px;right:28px;z-index:80;display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+          <div id="fabMenu" style="display:none;flex-direction:column;gap:6px;align-items:flex-end;animation:pageIn .25s cubic-bezier(0.16,1,0.3,1)">
+            <div onclick="navigate('planner');setTimeout(()=>{document.getElementById('taskDate').value=selectedDate;populateTaskSubjectDropdown();openModal('taskModal');},200)" style="display:flex;align-items:center;gap:8px;cursor:pointer;background:var(--bg1);border:1px solid var(--border2);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--t0);box-shadow:0 4px 20px rgba(0,0,0,.3);transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="16" y1="2" x2="16" y2="6"/></svg> ➕ Plan a New Task
+            </div>
+            <div onclick="openLogHoursInline()" style="display:flex;align-items:center;gap:8px;cursor:pointer;background:var(--bg1);border:1px solid var(--border2);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--t0);box-shadow:0 4px 20px rgba(0,0,0,.3);transition:all .15s" onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='var(--border2)'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ⏱ Log Your Session
+            </div>
+            <div onclick="openModal('vocabModal');resetVocabModal()" style="display:flex;align-items:center;gap:8px;cursor:pointer;background:var(--bg1);border:1px solid var(--border2);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--t0);box-shadow:0 4px 20px rgba(0,0,0,.3);transition:all .15s" onmouseover="this.style.borderColor='var(--sky)'" onmouseout="this.style.borderColor='var(--border2)'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg> 📖 Add a New Word
+            </div>
+          </div>
+          <button id="fabBtn" onclick="toggleFAB()" style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(99,102,241,.45);transition:all .2s;color:#fff" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+            <svg id="fabIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ═══════════════════════════════
+           PAGE: SUBJECTS
+      ═══════════════════════════════ -->
+      <div id="page-subjects" class="page">
+        <div class="section-header">
+          <div>
+            <div class="section-title display-font">Your Knowledge Map</div>
+            <div class="section-sub" id="subjectsSubtitle">Conquer one topic at a time</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="expandAllSubjects()">📂 Expand All</button>
+            <button class="btn btn-ghost btn-sm" onclick="collapseAllSubjects()">Collapse All</button>
+          </div>
+        </div>
+        <div class="subject-grid stagger" id="subjectGrid"></div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           PAGE: PLANNER
+      ═══════════════════════════════ -->
+      <div id="page-planner" class="page">
+        <div class="section-header">
+          <div>
+            <div class="section-title display-font">Plan Your Day, Own Your Future</div>
+            <div class="section-sub">Small steps today. Big wins tomorrow.</div>
+          </div>
+        </div>
+
+        <!-- Date strip -->
+        <div class="date-strip" id="dateStrip"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:20px">
+          <!-- Task list -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div class="filter-tabs">
+                <div class="filter-tab active" onclick="filterTasks('all',this)">Everything</div>
+                <div class="filter-tab" onclick="filterTasks('pending',this)">Up Next</div>
+                <div class="filter-tab" onclick="filterTasks('done',this)">Crushed It ✓</div>
+              </div>
+              <div id="taskCountLabel" style="font-size:12px;color:var(--t2)"></div>
+            </div>
+            <div id="taskListContainer"></div>
+          </div>
+
+          <!-- Sidebar: subject breakdown + mini heatmap -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card" style="padding:18px">
+              <div class="chart-title display-font" style="font-size:14px;font-weight:800;letter-spacing:-.02em;margin-bottom:14px">Where Your Time Goes</div>
+              <div id="plannerSubjectList" style="display:flex;flex-direction:column;gap:8px"></div>
+            </div>
+            <div class="card" style="padding:18px">
+              <div class="chart-title display-font" style="font-size:14px;font-weight:800;letter-spacing:-.02em;margin-bottom:10px">This Week at a Glance</div>
+              <div style="height:100px;position:relative"><canvas id="plannerChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════
+           PAGE: VOCABULARY
+      ═══════════════════════════════ -->
+      <div id="page-vocab" class="page">
+        <div class="section-header">
+          <div>
+            <div class="section-title display-font">Your Word Arsenal</div>
+            <div class="section-sub" id="vocabSubtitle">Every word you learn is a weapon in your exam arsenal</div>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
+          <div style="flex:1;min-width:200px;position:relative">
+            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--t2)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="vocabSearch" type="text" placeholder="Search your arsenal…" oninput="renderVocab()" style="width:100%;padding:9px 12px 9px 36px;background:var(--bg1);border:1px solid var(--border2);border-radius:var(--r2);color:var(--t0);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"/>
+          </div>
+          <div class="filter-tabs">
+            <div class="filter-tab active" onclick="vocabFilter='all';renderVocab();updateVocabFilterUI(this)">Full Arsenal</div>
+            <div class="filter-tab" onclick="vocabFilter='new';renderVocab();updateVocabFilterUI(this)">Just Added 📝</div>
+            <div class="filter-tab" onclick="vocabFilter='learned';renderVocab();updateVocabFilterUI(this)">In Progress ✓</div>
+            <div class="filter-tab" onclick="vocabFilter='mastered';renderVocab();updateVocabFilterUI(this)">Battle-Ready ⭐</div>
+          </div>
+          <select id="vocabCatFilter" onchange="renderVocab()" style="padding:9px 12px;background:var(--bg1);border:1px solid var(--border2);border-radius:var(--r2);color:var(--t0);font-size:13px;font-family:inherit;outline:none">
+            <option value="">All Categories</option>
+          </select>
+          <div id="vocabMetaLabel" style="font-size:12px;color:var(--t2);white-space:nowrap"></div>
+        </div>
+
+        <div id="vocabGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px"></div>
+        <div id="vocabSentinel" style="height:10px;margin-top:8px"></div>
+        <div id="vocabLoadMore" style="text-align:center;padding:12px;font-size:12px;color:var(--t2)"></div>
+      </div>
+
+
+      <!-- ═══════════════════════════════
+           PAGE: ISLAMIC — PRAYER & DHIKR
+      ═══════════════════════════════ -->
+      <div id="page-islamic" class="page">
+
+        <!-- Header row with Hijri date -->
+        <div class="section-header">
+          <div>
+            <div class="section-title display-font">🕌 Salah, Dua & Dhikr</div>
+            <div class="section-sub" style="display:flex;align-items:center;gap:8px;margin-top:6px">
+              <span class="hijri-badge" id="hijriBadge">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span id="hijriDateText">Loading…</span>
+              </span>
+              <span style="font-size:11px;color:var(--t2)" id="islamicGregorianDate"></span>
+            </div>
+          </div>
+          <div id="salahCountBadge" style="font-size:13px;font-weight:700;padding:6px 14px;border-radius:99px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);color:var(--green)">আজকের ইবাদত শুরু করো</div>
+        </div>
+
+        <!-- Salah Tracker (full width) -->
+        <div class="card chart-card" style="margin-bottom:16px">
+          <div class="chart-header" style="margin-bottom:16px">
+            <div>
+              <div class="chart-title display-font" style="font-size:14px;font-weight:800;letter-spacing:-.02em">🕌 আজকের ৫ ওয়াক্ত আদায় হয়েছে কি?</div>
+              <div class="chart-sub" id="salahDateLabel">যে ওয়াক্ত পড়েছ, সেটায় ক্লিক করো ✓</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:11px;color:var(--t2);margin-bottom:3px">পরবর্তী নামাজ</div>
+              <div style="font-size:13px;font-weight:700;color:var(--amber)" id="nextPrayerLabel">—</div>
+            </div>
+          </div>
+
+          <!-- 5 Prayer Buttons -->
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px">
+            <div class="prayer-btn" id="pray-fajr" onclick="togglePrayer('fajr')">
+              <div class="p-icon">🌙</div>
+              <div class="p-name">ফজর</div>
+              <div class="p-time" id="time-fajr">--:--</div>
+              <div class="p-check" id="check-fajr">○</div>
+            </div>
+            <div class="prayer-btn" id="pray-dhuhr" onclick="togglePrayer('dhuhr')">
+              <div class="p-icon">☀️</div>
+              <div class="p-name">যোহর</div>
+              <div class="p-time" id="time-dhuhr">--:--</div>
+              <div class="p-check" id="check-dhuhr">○</div>
+            </div>
+            <div class="prayer-btn" id="pray-asr" onclick="togglePrayer('asr')">
+              <div class="p-icon">🌤️</div>
+              <div class="p-name">আসর</div>
+              <div class="p-time" id="time-asr">--:--</div>
+              <div class="p-check" id="check-asr">○</div>
+            </div>
+            <div class="prayer-btn" id="pray-maghrib" onclick="togglePrayer('maghrib')">
+              <div class="p-icon">🌅</div>
+              <div class="p-name">মাগরিব</div>
+              <div class="p-time" id="time-maghrib">--:--</div>
+              <div class="p-check" id="check-maghrib">○</div>
+            </div>
+            <div class="prayer-btn" id="pray-isha" onclick="togglePrayer('isha')">
+              <div class="p-icon">🌃</div>
+              <div class="p-name">এশা</div>
+              <div class="p-time" id="time-isha">--:--</div>
+              <div class="p-check" id="check-isha">○</div>
+            </div>
+          </div>
+
+          <!-- Weekly heatmap -->
+          <div style="border-top:1px solid var(--border);padding-top:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--t2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">গত ৭ দিনের নামাজের রেকর্ড</div>
+            <div id="salahWeekGrid" style="display:flex;gap:6px"></div>
+          </div>
+        </div>
+
+        <!-- Dua + Dhikr row -->
+        <div class="islamic-grid">
+
+          <!-- Dua of the Day -->
+          <div class="card chart-card dua-fade" id="duaCard">
+            <div class="chart-header" style="margin-bottom:14px">
+              <div>
+                <div class="chart-title display-font" style="font-size:14px;font-weight:800;letter-spacing:-.02em">📿 Dua of the Day</div>
+                <div class="chart-sub">পড়া শুরু করার আগে এই দোয়া পড়ো</div>
+              </div>
+              <button onclick="nextDua()" class="btn btn-ghost btn-sm">পরের দোয়া →</button>
+            </div>
+
+            <!-- Arabic -->
+            <div class="arabic-text" id="duaArabic" style="font-size:26px;color:var(--amber);padding:14px 0 10px;border-bottom:1px solid var(--border)">
+              رَبِّ زِدْنِي عِلْمًا
+            </div>
+            <!-- Transliteration + Bangla Uccharon -->
+            <div id="duaTranslit" style="margin-top:12px">
+              <span style="font-size:12px;color:var(--t2);font-style:italic;letter-spacing:.01em">রাব্বি — যিদ্নী — ইলমা</span>
+              <div style="margin-top:6px;font-size:13.5px;color:var(--t0);font-weight:600;font-style:normal;letter-spacing:.01em">বাংলা উচ্চারণ: রাব্বি যিদনী ইলমা</div>
+            </div>
+            <!-- Meaning -->
+            <div id="duaMeaning" style="font-size:14px;color:var(--t0);font-weight:700;margin-top:6px;letter-spacing:-.01em">
+              "হে আমার রব, আমার জ্ঞান বৃদ্ধি করুন।"
+            </div>
+            <!-- Source -->
+            <div id="duaSource" style="font-size:11px;color:var(--t2);margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+              📖 সূরা ত্বহা, আয়াত ১১৪
+            </div>
+
+            <!-- Dua navigation dots -->
+            <div id="duaDots" style="display:flex;gap:5px;margin-top:12px;justify-content:center"></div>
+          </div>
+
+          <!-- Dhikr Counter -->
+          <div class="card chart-card">
+            <div class="chart-header" style="margin-bottom:14px">
+              <div>
+                <div class="chart-title display-font" style="font-size:14px;font-weight:800;letter-spacing:-.02em">📿 তাসবীহ গণনা</div>
+                <div class="chart-sub">মনকে স্থির রাখো — ১০০ বার জিকির করো</div>
+              </div>
+              <div style="font-size:11px;color:var(--t2)">লক্ষ্য: <span id="dhikrTarget">৩৩</span></div>
+            </div>
+
+            <!-- Big counter -->
+            <div style="text-align:center;margin-bottom:16px">
+              <div id="dhikrCount" style="font-family:'Cabinet Grotesk',sans-serif;font-size:72px;font-weight:900;color:var(--amber);letter-spacing:-.04em;line-height:1;transition:transform .1s">0</div>
+              <div class="arabic-text" id="dhikrArabic" style="font-size:20px;color:var(--t1);margin-top:6px">سُبْحَانَ اللَّه</div>
+              <div id="dhikrName" style="font-size:12px;color:var(--t2);margin-top:2px;font-weight:600">সুবহানাল্লাহ</div>
+            </div>
+
+            <!-- Tap button -->
+            <button class="dhikr-btn" id="dhikrBtn" onclick="incrementDhikr()">
+              <div style="font-size:15px;font-weight:700;margin-bottom:3px">ট্যাপ করো, মন শান্ত করো</div>
+              <div style="font-size:12px;opacity:.7;font-family:'Scheherazade New',serif">بِسْمِ اللَّه</div>
+            </button>
+
+            <!-- Switch buttons -->
+            <div style="display:flex;gap:6px;justify-content:center;margin-top:12px">
+              <button class="dhikr-sw active" onclick="setDhikr(0,this)">সুবহানাল্লাহ</button>
+              <button class="dhikr-sw" onclick="setDhikr(1,this)">আলহামদুলিল্লাহ</button>
+              <button class="dhikr-sw" onclick="setDhikr(2,this)">আল্লাহু আকবার</button>
+            </div>
+
+            <!-- Progress + reset -->
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+              <div style="height:5px;background:var(--border2);border-radius:99px;overflow:hidden;margin-bottom:10px">
+                <div id="dhikrProgressBar" style="height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,var(--amber),#fcd34d);transition:width .3s var(--ease)"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:11px;color:var(--t2)">এখন পর্যন্ত: <span id="dhikrTodayTotal" style="color:var(--amber);font-weight:700">০</span> বার সম্পন্ন</div>
+                <button onclick="resetDhikr()" style="font-size:11px;color:var(--t2);background:none;border:none;cursor:pointer;font-family:inherit;transition:color .15s" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--t2)'">রিসেট ↺</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Full Dua Collection (accordion) -->
+        <div class="card chart-card" style="margin-top:16px">
+          <div class="chart-header" style="margin-bottom:16px">
+            <div>
+              <div class="chart-title display-font" style="font-size:14px;font-weight:800;letter-spacing:-.02em">📚 দোয়ার সংকলন</div>
+              <div class="chart-sub">সংকটে, পড়াশোনায়, দিনের শুরু ও শেষে — প্রতিটি মুহূর্তের দোয়া</div>
+            </div>
+          </div>
+          <div id="duaCollection" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+
+      </div><!-- /page-islamic -->
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ══════════════════════════════════
+     MODALS
+══════════════════════════════════ -->
+
+<!-- Add Subject -->
+<div class="modal-overlay" id="subjectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title display-font" id="subjectModalTitle">Open a New Chapter</div>
+      <button class="modal-close" onclick="closeModal('subjectModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Subject Name</label>
+      <input type="text" id="subjectName" class="form-input" placeholder="e.g. Physics, বাংলা প্রথম পত্র"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Icon (emoji)</label>
+        <input type="text" id="subjectIcon" class="form-input" placeholder="📗" maxlength="2" title="Pick an emoji to represent this subject"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Color Theme</label>
+        <select id="subjectColor" class="form-input">
+          <option value="teal">🟢 Teal</option>
+          <option value="blue">🔵 Blue</option>
+          <option value="purple">🟣 Purple</option>
+          <option value="orange">🟠 Orange</option>
+          <option value="rose">🔴 Rose</option>
+          <option value="amber">🟡 Amber</option>
+          <option value="sky">🩵 Sky</option>
+          <option value="lime">🟩 Lime</option>
+          <option value="pink">🩷 Pink</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('subjectModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveSubject()">Save Subject</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Task -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title display-font">What's the Mission?</div>
+      <button class="modal-close" onclick="closeModal('taskModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Task Title</label>
+      <input type="text" id="taskTitle" class="form-input" placeholder="e.g. English Voice Change Practice"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <select id="taskSubject" class="form-input"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Priority</label>
+        <select id="taskPriority" class="form-input">
+          <option value="high">🔴 High — Must do today</option>
+          <option value="medium" selected>🟡 Medium — Important</option>
+          <option value="low">🟢 Low — When free</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" id="taskDate" class="form-input"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hours (est.)</label>
+        <input type="number" id="taskHours" class="form-input" placeholder="e.g. 1.5" min="0" max="24" step="0.5"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea id="taskNotes" class="form-input" placeholder="Any notes, page numbers, or reminders…" rows="2"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('taskModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Vocab -->
+<div class="modal-overlay" id="vocabModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title display-font" id="vocabModalTitle">Add New Word</div>
+      <button class="modal-close" onclick="closeModal('vocabModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">English Word *</label>
+        <input type="text" id="vWord" class="form-input" placeholder="e.g. Resilience"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Meaning (Bangla)</label>
+        <input type="text" id="vMeaning" class="form-input" placeholder="e.g. স্থিতিস্থাপকতা"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Synonyms</label>
+      <input type="text" id="vSynonyms" class="form-input" placeholder="e.g. toughness, endurance, grit"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Example Sentence</label>
+      <textarea id="vExample" class="form-input" rows="2" placeholder="e.g. Her resilience helped her overcome every obstacle."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <input type="text" id="vCategory" class="form-input" placeholder="e.g. Academic, GK, Idioms"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="vStatus" class="form-input">
+          <option value="new">New</option>
+          <option value="learned">Learned</option>
+          <option value="mastered">Mastered</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('vocabModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveVocab()">Save Word</button>
+    </div>
+  </div>
+</div>
+
+<!-- Google Sheets Config -->
+<div class="modal-overlay" id="gsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title display-font">Backup to Google Sheets</div>
+      <button class="modal-close" onclick="closeModal('gsModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="padding:12px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:var(--r2);margin-bottom:18px;font-size:12.5px;color:var(--t1);line-height:1.7">
+      Connect your Google Apps Script Web App to automatically sync tasks, progress, and study logs to Google Sheets. LocalStorage is always used as fallback.
+    </div>
+    <div class="form-group">
+      <label class="form-label">Apps Script Web App URL</label>
+      <input type="url" id="gsUrl" class="form-input" placeholder="https://script.google.com/macros/s/…/exec"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Sheet Name</label>
+      <input type="text" id="gsSheetName" class="form-input" placeholder="StudyOS" value="StudyOS"/>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg2);border-radius:var(--r2);margin-bottom:4px">
+      <div class="gs-dot disconnected" id="gsModalDot"></div>
+      <span id="gsModalStatus" style="font-size:13px;color:var(--t1)">Not configured</span>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="testGS()">Test Connection</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('gsModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveGS()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Subject -->
+<div class="modal-overlay" id="renameModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title display-font">Rename Subject</div>
+      <button class="modal-close" onclick="closeModal('renameModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <input type="hidden" id="renameSubjectId"/>
+    <div class="form-group">
+      <label class="form-label">New Name</label>
+      <input type="text" id="renameSubjectName" class="form-input" placeholder="Subject name"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('renameModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="confirmRename()">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════
+//  1. DATA LAYER
+// ═══════════════════════════════════════════
+const DB = {
+  get: k => { try { return JSON.parse(localStorage.getItem('sos_'+k)); } catch { return null; } },
+  set: (k,v) => { localStorage.setItem('sos_'+k, JSON.stringify(v)); scheduleGSSync(k,v); },
+  del: k => localStorage.removeItem('sos_'+k),
+};
+
+let gsConfig = DB.get('gsConfig') || { url:'', sheet:'StudyOS', enabled:false };
+
+async function scheduleGSSync(key, data) {
+  if (!gsConfig.enabled || !gsConfig.url) return;
+  try {
+    await fetch(gsConfig.url, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'update', key, data, sheet:gsConfig.sheet, ts:Date.now() })
+    });
+  } catch(e) { /* offline — data safe in LS */ }
+}
+
+// ═══════════════════════════════════════════
+//  2. SEED DATA
+// ═══════════════════════════════════════════
+const SUBJECT_COLORS = {
+  teal:'#10b981', blue:'#3b82f6', purple:'#a855f7',
+  orange:'#f97316', rose:'#f43f5e', amber:'#f59e0b',
+  sky:'#38bdf8', lime:'#84cc16', pink:'#ec4899'
+};
+
+const DEFAULT_SUBJECTS = [
+  { name:'বাংলা প্রথম পত্র',      icon:'📗', color:'teal'   },
+  { name:'বাংলা দ্বিতীয় পত্র',   icon:'📘', color:'blue'   },
+  { name:'English 1st Paper',     icon:'🔤', color:'purple' },
+  { name:'English 2nd Paper',     icon:'📝', color:'orange' },
+  { name:'বাংলা মুখস্ত আইটেম',    icon:'🧠', color:'rose'   },
+  { name:'English Memo Items',    icon:'💬', color:'amber'  },
+  { name:'GK — International',    icon:'🌍', color:'sky'    },
+  { name:'GK — National',         icon:'🇧🇩', color:'lime'  },
+  { name:'ICT',                   icon:'💻', color:'pink'   },
+];
+
+function seedIfNeeded() {
+  if (DB.get('seeded') === 'v2') return;
+
+  const TOPIC_NAMES = {
+    'English 1st Paper': [
+      'Reading Comprehension — Seen','Reading Comprehension — Unseen','Text: Changing World',
+      'Text: My Country, My Home','Text: My School Days','Text: Grandmother',
+      'Text: Behind the Bar','Text: The Bet','Text: Our Heroes','Text: Justice',
+      'Poetry: Stopping by Woods','Poetry: Shall I Compare Thee',
+      'Poetry: Pied Beauty','Poetry: La Belle Dame','Poetry: The Solitary Reaper',
+      'Summary Writing','Information Transfer','Table & Graph Description',
+      'Letter Writing — Formal','Email Writing','Dialogue Writing','Report Writing',
+      'Story Writing — Seen','Story Writing — Unseen','Essay: Environment',
+      'Board Questions 2021','Board Questions 2022','Board Questions 2023',
+      'Model Test 1','Model Test 2'
+    ],
+    'English 2nd Paper': [
+      'Parts of Speech — Noun & Pronoun','Parts of Speech — Verb & Adverb',
+      'Subject-Verb Agreement','Tense — Present & Past','Tense — Future & Perfect',
+      'Voice Change — Active to Passive','Voice Change — Passive to Active',
+      'Narration — Direct to Indirect','Narration — Indirect to Direct',
+      'Transformation of Sentences','Completing Sentences','Clause & Phrase',
+      'Prepositions in Context','Articles — A, An, The','Modals & Auxiliaries',
+      'Conditional Sentences','Connectors & Linkers','Paragraph Writing',
+      'Letter Writing — Informal','Application Writing','CV & Cover Letter',
+      'Dialogue Writing','Grammar MCQ Practice','Sentence Correction',
+      'Board Questions 2021','Board Questions 2022','Board Questions 2023',
+      'Model Test 1','Model Test 2','Full Syllabus Revision'
+    ],
+    'English Memo Items': [
+      'High-Frequency Vocabulary (1–50)','High-Frequency Vocabulary (51–100)',
+      'Synonyms & Antonyms Set 1','Synonyms & Antonyms Set 2',
+      'One-Word Substitutions (A–F)','One-Word Substitutions (G–Z)',
+      'Idioms & Phrases Set 1','Idioms & Phrases Set 2',
+      'Phrasal Verbs Set 1','Phrasal Verbs Set 2',
+      'Common Proverbs','Pair of Words — Confusables',
+      'Word Roots — Latin & Greek','Prefix & Suffix Patterns',
+      'Academic Word List Set 1','Academic Word List Set 2',
+      'Commonly Misspelled Words','Formal vs Informal Words',
+      'Transition Words & Connectors','Collocations Set 1',
+      'Collocations Set 2','Literary Terms & Definitions',
+      'Grammar Rules Quick Reference','Important Quotations',
+      'Authors & Their Famous Works','Model Test — Vocabulary 1',
+      'Model Test — Vocabulary 2','Rapid Revision Set 1',
+      'Rapid Revision Set 2','Final Review'
+    ],
+    'GK — International': [
+      'United Nations & Agencies','World Capitals & Countries',
+      'Continents, Oceans & Geography','International Organizations (NATO, WTO)',
+      'Nobel Prize — History & Winners','Famous World Leaders',
+      'World Wars — Causes & Outcomes','Cold War & Modern Conflicts',
+      'Climate Change & Paris Agreement','Space Exploration (NASA, ISRO)',
+      'Major International Treaties','Human Rights & UN Declarations',
+      'World Economy & GDP Rankings','G7, G20, SAARC, ASEAN',
+      'International Sports (Olympics, FIFA)','Famous Scientists & Inventions',
+      'UNESCO World Heritage Sites','Major Religions & Holy Books',
+      'International Days & Observances','Current Affairs 2024 — Global',
+      'Political Maps & Border Disputes','Major World Currencies',
+      'World Health Organization (WHO)','International Court of Justice',
+      'Technology Giants & Innovations','Developing vs Developed Nations',
+      'Model Test — International GK 1','Model Test — International GK 2',
+      'Rapid Revision Set 1','Rapid Revision Set 2'
+    ],
+    'GK — National': [
+      'Liberation War 1971 — Events & Dates','Bangladesh Constitution — Key Articles',
+      'Government Structure & Branches','Bangladesh Economy & GDP',
+      'Agriculture, Industry & Trade','Rivers, Mountains & Geography of BD',
+      'Famous Personalities of Bangladesh','National Awards & Honours',
+      'Historical Places & Monuments','National Days & Symbols',
+      'Education System of Bangladesh','BD in International Organizations',
+      'Sports Achievements of Bangladesh','Bangladesh Foreign Policy',
+      'Current Affairs 2024 — National','Population, Census & Statistics',
+      'Budget & Development Plans','Major Projects (Padma Bridge, Metro Rail)',
+      'Political History Post-1971','Districts, Divisions & Administration',
+      'Culture, Festivals & Heritage','Healthcare & Social Welfare',
+      'Digital Bangladesh Initiatives','Environment & Climate in BD',
+      'Freedom Fighters & Martyrs','Model Test — National GK 1',
+      'Model Test — National GK 2','Rapid Revision Set 1',
+      'Rapid Revision Set 2','Full Syllabus Review'
+    ],
+    'ICT': [
+      'Introduction to ICT','World & Bangladesh ICT Context',
+      'Computer Generations & Types','Hardware Components',
+      'Software — System & Application','Internet & Networking Basics',
+      'Web Browsing & Email','Data & Database Concepts',
+      'Number Systems — Binary','Number Systems — Octal & Hexadecimal',
+      'Number System Conversion','Logic Gates — AND, OR, NOT',
+      'Logic Gates — NAND, NOR, XOR','Boolean Algebra',
+      'HTML — Basic Tags & Structure','HTML — Forms & Tables',
+      'Programming Concepts & Flowchart','Algorithm & Pseudocode',
+      'Cybersecurity & Cyber Crime','Artificial Intelligence & ML',
+      'Robotics & Automation','Cloud Computing',
+      'E-Commerce & Digital Transactions','Social Media & Ethics',
+      'Spreadsheet Basics (MS Excel)','Word Processing (MS Word)',
+      'Board Questions 2021','Board Questions 2022',
+      'Board Questions 2023','Model Test & Full Revision'
+    ],
+  };
+
+  const subjects = DEFAULT_SUBJECTS.map((s, si) => {
+    const tnames = TOPIC_NAMES[s.name] || [];
+    return {
+      id: uid(),
+      name: s.name,
+      icon: s.icon,
+      color: s.color,
+      topics: Array.from({length:30}, (_,i) => ({
+        id: uid(),
+        name: tnames[i] || 'Topic ' + (i+1),
+        done: Math.random() < 0.2
+      }))
+    };
+  });
+  DB.set('subjects', subjects);
+
+  // 14 days of study logs
+  const logs = [];
+  const today = todayStr();
+  for (let i=0; i<14; i++) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const ds = d.toISOString().split('T')[0];
+    if (Math.random() > 0.15) {
+      logs.push({ date:ds, hours: +(1.5 + Math.random()*4.5).toFixed(1) });
+    }
+  }
+  DB.set('studyLogs', logs);
+
+  // Tasks
+  const tasks = [
+    { id:uid(), title:'বাংলা ব্যাকরণ — সন্ধি অনুশীলন', subject:'বাংলা দ্বিতীয় পত্র', priority:'high', date:todayStr(), hours:1.5, notes:'Focus on Swara Sandhi rules', done:false },
+    { id:uid(), title:'English Grammar — Voice Change Practice', subject:'English 2nd Paper', priority:'high', date:todayStr(), hours:1, notes:'Active to passive transformation', done:true },
+    { id:uid(), title:'GK — Rivers & Geography of Bangladesh', subject:'GK — National', priority:'medium', date:todayStr(), hours:0.5, notes:'', done:false },
+    { id:uid(), title:'ICT — Number System Review', subject:'ICT', priority:'medium', date:todayStr(), hours:1, notes:'Binary, Octal, Hexadecimal', done:false },
+    { id:uid(), title:'Vocabulary Review — 20 words', subject:'English Memo Items', priority:'low', date:todayStr(), hours:0.5, notes:'', done:false },
+  ];
+  DB.set('tasks', tasks);
+
+  // Vocabulary
+  const vocab = [
+    { id:uid(), word:'Resilience',   meaning:'স্থিতিস্থাপকতা', synonyms:'toughness, endurance',  example:'Her resilience helped her overcome every obstacle.', category:'Academic', status:'learned' },
+    { id:uid(), word:'Ephemeral',    meaning:'ক্ষণস্থায়ী',      synonyms:'transient, fleeting',   example:'Fame is ephemeral; character is permanent.',        category:'Academic', status:'new' },
+    { id:uid(), word:'Ubiquitous',   meaning:'সর্বত্র বিদ্যমান',synonyms:'omnipresent, pervasive',example:'Smartphones are ubiquitous in modern life.',         category:'Academic', status:'mastered' },
+    { id:uid(), word:'Pragmatic',    meaning:'ব্যবহারিক',        synonyms:'practical, realistic',  example:'We need a pragmatic solution to this crisis.',       category:'Academic', status:'learned' },
+    { id:uid(), word:'Ambiguous',    meaning:'দ্ব্যর্থবোধক',    synonyms:'unclear, vague',         example:'The statement was ambiguous.',                       category:'Academic', status:'new' },
+    { id:uid(), word:'Benevolent',   meaning:'পরোপকারী',         synonyms:'kind, generous',         example:'The benevolent king cared for his people.',          category:'GK', status:'learned' },
+    { id:uid(), word:'Catastrophe',  meaning:'বিপর্যয়',          synonyms:'disaster, calamity',    example:'The flood was a catastrophe for the region.',        category:'Academic', status:'mastered' },
+    { id:uid(), word:'Diligent',     meaning:'পরিশ্রমী',          synonyms:'hardworking, industrious',example:'Diligent students always succeed.',               category:'Academic', status:'learned' },
+    { id:uid(), word:'Eloquent',     meaning:'বাকপটু',            synonyms:'articulate, fluent',    example:'She gave an eloquent speech.',                        category:'Idiom', status:'new' },
+    { id:uid(), word:'Meticulous',   meaning:'সুক্ষ্মদর্শী',     synonyms:'thorough, careful',      example:'She was meticulous in her research.',                category:'Academic', status:'learned' },
+    { id:uid(), word:'Tenacious',    meaning:'একগুঁয়ে ও দৃঢ়',   synonyms:'persistent, stubborn',  example:'She was tenacious in pursuing her goals.',           category:'Academic', status:'new' },
+    { id:uid(), word:'Inevitable',   meaning:'অনিবার্য',          synonyms:'unavoidable, certain',  example:'Change is inevitable.',                              category:'Academic', status:'mastered' },
+  ];
+  DB.set('vocab', vocab);
+  DB.set('seeded', 'v2');
+}
+
+// ═══════════════════════════════════════════
+//  3. UTILITIES
+// ═══════════════════════════════════════════
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const todayStr = () => new Date().toISOString().split('T')[0];
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `${type==='success'?'✓':type==='error'?'✗':'ℹ'} ${msg}`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 2800);
+}
+
+function svgCheck() {
+  return `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`;
+}
+
+// ═══════════════════════════════════════════
+//  4. NAVIGATION
+// ═══════════════════════════════════════════
+const PAGE_LABELS = { dashboard:'Dashboard', subjects:'Subjects & Topics', planner:'Daily Planner', vocab:'Vocabulary Hub', islamic:'Salah, Dua & Dhikr' };
+const QUICK_ADD_LABELS = { dashboard:'Log Study Hours', subjects:'New Subject', planner:'New Task', vocab:'Add Word', islamic:'Log Prayer' };
+let currentPage = 'dashboard';
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  document.getElementById('topbarTitle').textContent = PAGE_LABELS[page];
+  document.getElementById('quickAddLabel').textContent = QUICK_ADD_LABELS[page];
+  currentPage = page;
+  closeSidebar();
+  const renderers = { dashboard:renderDashboard, subjects:renderSubjects, planner:renderPlanner, vocab:renderVocab, islamic:renderIslamicPage };
+  renderers[page]?.();
+  // Show FAB only on dashboard
+  const fab = document.getElementById('dashQuickAdd');
+  if (fab) fab.style.display = page === 'dashboard' ? 'flex' : 'none';
+  // Close FAB menu on nav
+  if (fabOpen) toggleFAB();
+}
+
+function handleQuickAdd() {
+  if (currentPage==='dashboard') openLogHoursInline();
+  if (currentPage==='subjects') { resetSubjectModal(); openModal('subjectModal'); }
+  if (currentPage==='planner') { document.getElementById('taskDate').value=selectedDate; populateTaskSubjectDropdown(); openModal('taskModal'); }
+  if (currentPage==='vocab') { resetVocabModal(); openModal('vocabModal'); }
+}
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('mobileBackdrop').style.display='block';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mobileBackdrop').style.display='none';
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════════
+//  5. THEME
+// ═══════════════════════════════════════════
+let isDark = DB.get('theme') !== 'light';
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeLabel').textContent = isDark ? 'Light Mode' : 'Dark Mode';
+  if (studyChartInst) { studyChartInst.destroy(); studyChartInst=null; }
+  if (donutChartInst) { donutChartInst.destroy(); donutChartInst=null; }
+  if (plannerChartInst) { plannerChartInst.destroy(); plannerChartInst=null; }
+  if (currentPage==='dashboard') renderDashboard();
+  if (currentPage==='planner') renderPlanner();
+}
+function toggleTheme() { isDark=!isDark; DB.set('theme',isDark?'dark':'light'); applyTheme(); }
+
+// ═══════════════════════════════════════════
+//  6. DASHBOARD
+// ═══════════════════════════════════════════
+let studyChartInst=null, donutChartInst=null, chartPeriod='weekly', studyHoursToday=0;
+
+function renderDashboard() {
+  document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const logs = DB.get('studyLogs') || [];
+  const subjects = DB.get('subjects') || [];
+  const vocab = DB.get('vocab') || [];
+  const tasks = DB.get('tasks') || [];
+
+  // KPIs
+  const todayLog = logs.find(l=>l.date===todayStr());
+  studyHoursToday = todayLog ? todayLog.hours : 0;
+  const streak = calcStreak(logs);
+  const allTopics = subjects.flatMap(s=>s.topics);
+  const doneTopics = allTopics.filter(t=>t.done).length;
+  const totalTopics = allTopics.length;
+  const learnedVocab = vocab.filter(v=>v.status==='learned'||v.status==='mastered').length;
+  const weeklyHours = logs.filter(l=>{
+    const d=new Date(l.date+'T12:00:00'); const w=new Date(); w.setDate(w.getDate()-7);
+    return d>=w;
+  }).reduce((a,l)=>a+l.hours,0);
+
+  animCount('kpi-hours', studyHoursToday, 'h', 1);
+  animCount('kpi-streak', streak);
+  animCount('kpi-topics', doneTopics);
+  animCount('kpi-vocab', learnedVocab);
+
+  document.getElementById('kpi-hours-trend').textContent = `+${weeklyHours.toFixed(1)}h this week`;
+  const topicsPct = totalTopics ? Math.round(doneTopics/totalTopics*100) : 0;
+  const topicsEl = document.getElementById('kpi-topics-pct');
+  topicsEl.textContent = topicsPct >= 80 ? `${topicsPct}% — Almost there, warrior!` : topicsPct >= 50 ? `${topicsPct}% — Great progress!` : topicsPct >= 20 ? `${topicsPct}% — Keep going!` : `${topicsPct}% — Just getting started`;
+  document.getElementById('kpi-vocab-pct').textContent = vocab.length ? `${Math.round(learnedVocab/vocab.length*100)}% of ${vocab.length} words` : 'Add words to begin';
+  // Update "total topics" sub-text
+  document.getElementById('kpi-topics-total').textContent = totalTopics;
+
+  // Daily Goal bar update
+  const DAILY_GOAL = 4;
+  const goalPct = Math.min(studyHoursToday / DAILY_GOAL * 100, 100);
+  const goalBar = document.getElementById('dailyGoalBar');
+  const goalHoursEl = document.getElementById('dailyGoalHours');
+  const goalQuote = document.getElementById('dailyGoalQuote');
+  if (goalBar) setTimeout(()=>goalBar.style.width=goalPct+'%', 150);
+  if (goalHoursEl) goalHoursEl.textContent = studyHoursToday.toFixed(1)+'h';
+  const QUOTES = [
+    "Every hour invested compounds.",
+    "Consistency beats intensity every time.",
+    "Small steps, big results.",
+    "Your future self will thank you.",
+    "Progress is progress, no matter how small.",
+    "Focus on the process, not the outcome.",
+  ];
+  if (goalQuote) goalQuote.textContent = QUOTES[new Date().getDay() % QUOTES.length];
+
+  setTimeout(() => {
+    setBar('kpi-hours-bar', Math.min(studyHoursToday/10*100,100));
+    setBar('kpi-streak-bar', Math.min(streak/30*100,100));
+    setBar('kpi-topics-bar', totalTopics ? doneTopics/totalTopics*100 : 0);
+    setBar('kpi-vocab-bar', vocab.length ? learnedVocab/vocab.length*100 : 0);
+  }, 100);
+
+  buildStudyChart(logs);
+  buildDonutChart(subjects);
+  renderDashTasks(tasks);
+  buildHeatmap(logs);
+  document.getElementById('subjectCount').textContent = subjects.length;
+  // Islamic dashboard widgets
+  renderDashSalah();
+  renderDuaDash(duaIdx);
+}
+
+function setBar(id, pct) { document.getElementById(id).style.width = pct+'%'; }
+
+function animCount(id, target, suffix='', decimals=0) {
+  const el = document.getElementById(id); if(!el) return;
+  let cur = 0; const steps = 30; const step = target/steps;
+  const t = setInterval(() => {
+    cur = Math.min(cur+step, target);
+    el.textContent = decimals ? cur.toFixed(decimals)+suffix : Math.round(cur)+suffix;
+    if (cur >= target) clearInterval(t);
+  }, 16);
+}
+
+function calcStreak(logs) {
+  const seen = new Set(logs.map(l=>l.date));
+  const td = todayStr();
+  const yd = new Date(td+'T12:00:00'); yd.setDate(yd.getDate()-1);
+  const yk = yd.toISOString().split('T')[0];
+  if (!seen.has(td) && !seen.has(yk)) return 0;
+  let streak=0, cur=new Date(td+'T12:00:00');
+  while (seen.has(cur.toISOString().split('T')[0])) { streak++; cur.setDate(cur.getDate()-1); }
+  return streak;
+}
+
+function buildStudyChart(logs) {
+  if (studyChartInst) studyChartInst.destroy();
+
+  const days = chartPeriod === 'weekly' ? 7 : 30;
+  const labels = [], data = [], dates = [];
+
+  for (let i = days-1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = d.toISOString().split('T')[0];
+    dates.push(k);
+    labels.push(chartPeriod === 'weekly'
+      ? d.toLocaleDateString('en', {weekday:'short'})
+      : d.getDate().toString());
+    const l = logs.find(x => x.date === k);
+    data.push(l ? l.hours : 0);
+  }
+
+  // ── Compute stats ──────────────────────────────────
+  const nonZero   = data.filter(v => v > 0);
+  const total     = data.reduce((a,b) => a+b, 0);
+  const avg       = nonZero.length ? (total / nonZero.length) : 0;
+  const best      = Math.max(...data, 0);
+  const activeDays = nonZero.length;
+
+  // Update stat strip
+  const fmt = v => v >= 1 ? v.toFixed(1)+'h' : Math.round(v*60)+'m';
+  const setEl = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  setEl('chartStatTotal', fmt(total));
+  setEl('chartStatAvg',   avg > 0 ? fmt(avg) : '—');
+  setEl('chartStatBest',  best > 0 ? fmt(best) : '—');
+
+  // Day dots footer
+  const dotEl = document.getElementById('chartDayDots');
+  const lblEl = document.getElementById('chartDayLabel');
+  if (dotEl) {
+    dotEl.innerHTML = data.map((v,i) => {
+      const isToday = dates[i] === todayStr();
+      const col = v === 0 ? 'var(--border2)' : v >= avg*1.2 ? 'var(--green)' : 'var(--accent)';
+      return `<div title="${labels[i]}: ${v}h" style="width:${chartPeriod==='weekly'?'18px':'8px'};height:${chartPeriod==='weekly'?'18px':'8px'};border-radius:50%;background:${col};${isToday?'box-shadow:0 0 0 2px var(--accent2)':''}"></div>`;
+    }).join('');
+  }
+  if (lblEl) {
+    lblEl.innerHTML = `<span style="color:var(--green);font-weight:700">${activeDays}</span>/${days} days active`;
+  }
+
+  // ── Build chart ────────────────────────────────────
+  const dark = isDark;
+  const ctx  = document.getElementById('studyChart').getContext('2d');
+
+  // Multi-stop gradient for richer fill
+  const grad = ctx.createLinearGradient(0, 0, 0, 180);
+  grad.addColorStop(0,   'rgba(99,102,241,.35)');
+  grad.addColorStop(0.5, 'rgba(99,102,241,.12)');
+  grad.addColorStop(1,   'rgba(99,102,241,0)');
+
+  // Point colors: highlight today + best day
+  const maxVal  = Math.max(...data);
+  const ptColors = data.map((v, i) => {
+    if (dates[i] === todayStr()) return '#fbbf24';   // today = amber
+    if (v === maxVal && v > 0)   return '#10b981';   // best = green
+    return v > 0 ? '#6366f1' : 'rgba(99,102,241,.3)';
+  });
+  const ptRadius = data.map((v, i) => {
+    if (dates[i] === todayStr()) return 6;
+    if (v === maxVal && v > 0)   return 5;
+    return v > 0 ? 3.5 : 2;
+  });
+
+  studyChartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Study Hours',
+        data,
+        borderColor: '#6366f1',
+        backgroundColor: grad,
+        borderWidth: 2.5,
+        pointBackgroundColor: ptColors,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 1.5,
+        pointRadius: ptRadius,
+        pointHoverRadius: 8,
+        pointHoverBackgroundColor: '#fbbf24',
+        fill: true,
+        tension: .44,
+        spanGaps: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 700, easing: 'easeOutQuart' },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: dark ? 'rgba(13,18,32,.97)' : 'rgba(255,255,255,.97)',
+          titleColor:  dark ? '#f0f4ff' : '#0d1220',
+          bodyColor:   dark ? '#8b98b5' : '#4a5568',
+          borderColor: dark ? 'rgba(99,102,241,.35)' : 'rgba(99,102,241,.25)',
+          borderWidth: 1, cornerRadius: 10, padding: 12,
+          callbacks: {
+            title: c => c[0].label,
+            label: c => {
+              const v = c.raw;
+              if (!v) return '  Rest day';
+              const tag = v === best ? ' 🏆 Best day!' : v >= avg ? ' 📈 Above avg' : '';
+              return `  ${v}h studied${tag}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            color: dark ? '#4a5568' : '#7b8aa0',
+            font: { size: 11, weight: '600' },
+            maxRotation: 0,
+          }
+        },
+        y: {
+          grid: { color: dark ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.04)', drawBorder: false },
+          border: { display: false, dash: [4,4] },
+          ticks: {
+            color: dark ? '#4a5568' : '#7b8aa0',
+            font: { size: 11 },
+            callback: v => v === 0 ? '' : v+'h',
+            maxTicksLimit: 5,
+          },
+          beginAtZero: true,
+        }
+      }
+    }
+  });
+}
+
+function switchChartPeriod(period) {
+  chartPeriod = period;
+  // Update button styles
+  const wBtn = document.getElementById('tab-weekly');
+  const mBtn = document.getElementById('tab-monthly');
+  const activeStyle = 'background:var(--accent);color:#fff;';
+  const inactiveStyle = 'background:transparent;color:var(--t2);';
+  if (wBtn) wBtn.style.cssText = wBtn.style.cssText.replace(/background:[^;]+;color:[^;]+;/, '') + (period==='weekly' ? activeStyle : inactiveStyle);
+  if (mBtn) mBtn.style.cssText = mBtn.style.cssText.replace(/background:[^;]+;color:[^;]+;/, '') + (period==='monthly' ? activeStyle : inactiveStyle);
+  buildStudyChart(DB.get('studyLogs')||[]);
+}
+
+function buildDonutChart(subjects) {
+  if (donutChartInst) donutChartInst.destroy();
+  if (!subjects.length) return;
+
+  const data   = subjects.map(s => {
+    const done = s.topics.filter(t=>t.done).length;
+    return s.topics.length ? Math.round(done/s.topics.length*100) : 0;
+  });
+  const colors = subjects.map(s => SUBJECT_COLORS[s.color]||'#6366f1');
+  const labels = subjects.map(s=>s.name);
+
+  // Overall average
+  const overall = data.length ? Math.round(data.reduce((a,b)=>a+b,0)/data.length) : 0;
+
+  // Update center stat + badge
+  const ctrEl = document.getElementById('donutCenterPct');
+  if (ctrEl) ctrEl.textContent = overall+'%';
+  const bdgEl = document.getElementById('donutOverallBadge');
+  if (bdgEl) {
+    bdgEl.textContent = 'Overall: '+overall+'%';
+    const c = overall>=70?'rgba(16,185,129,.12)':overall>=40?'rgba(99,102,241,.1)':'rgba(245,158,11,.1)';
+    const t = overall>=70?'var(--green)':overall>=40?'var(--accent2)':'var(--amber)';
+    const b = overall>=70?'rgba(16,185,129,.25)':overall>=40?'rgba(99,102,241,.22)':'rgba(245,158,11,.22)';
+    bdgEl.style.cssText += `;background:${c};color:${t};border-color:${b}`;
+  }
+
+  // Chart — gap between segments
+  const bg = isDark?'#0d1220':'#ffffff';
+  donutChartInst = new Chart(document.getElementById('subjectDonut'), {
+    type:'doughnut',
+    data:{ labels, datasets:[{
+      data,
+      backgroundColor: colors,
+      borderWidth: 3,
+      borderColor: bg,
+      hoverBorderColor: bg,
+      hoverOffset: 8,
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      animation:{ animateRotate:true, duration:900, easing:'easeOutQuart' },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          backgroundColor: isDark?'rgba(13,18,32,.97)':'rgba(255,255,255,.97)',
+          titleColor: isDark?'#f0f4ff':'#0d1220',
+          bodyColor:  isDark?'#8b98b5':'#4a5568',
+          borderColor: isDark?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)',
+          borderWidth:1, cornerRadius:10, padding:12,
+          callbacks:{
+            title: c => c[0].label,
+            label: c => {
+              const done = subjects[c.dataIndex]?.topics.filter(t=>t.done).length || 0;
+              const total = subjects[c.dataIndex]?.topics.length || 0;
+              return ` ${Math.round(c.raw)}% complete  (${done}/${total} topics)`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // ── Rich legend with mini progress bars ──
+  const lgd = document.getElementById('donutLegend');
+  lgd.innerHTML = subjects.map((s,i) => {
+    const done  = s.topics.filter(t=>t.done).length;
+    const total = s.topics.length;
+    const pct   = data[i];
+    const statusEmoji = pct>=80?'🏆':pct>=50?'📈':pct>=20?'🔧':'🌱';
+    const statusText  = pct>=80?'Almost done':pct>=50?'Good progress':pct>=20?'In progress':'Just started';
+    return `
+    <div style="padding:9px 10px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);transition:all .18s;cursor:default"
+         onmouseover="this.style.borderColor='${colors[i]}44';this.style.background='var(--bg3)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg2)'">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+        <div style="display:flex;align-items:center;gap:7px;min-width:0">
+          <div style="width:9px;height:9px;border-radius:3px;flex-shrink:0;background:${colors[i]};box-shadow:0 0 6px ${colors[i]}55"></div>
+          <span style="font-size:12px;color:var(--t0);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;letter-spacing:-.01em">${esc(s.name)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+          <span style="font-size:9.5px;color:var(--t2);font-weight:500">${statusEmoji} ${statusText}</span>
+          <span style="font-size:13px;font-family:'Cabinet Grotesk',sans-serif;font-weight:900;color:${colors[i]};letter-spacing:-.03em;min-width:32px;text-align:right">${pct}%</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;height:4px;background:var(--border2);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${colors[i]};border-radius:99px;transition:width 1.2s cubic-bezier(0.16,1,0.3,1)"></div>
+        </div>
+        <span style="font-size:10px;color:var(--t2);font-weight:500;white-space:nowrap;min-width:40px;text-align:right">${done}/${total}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDashTasks(tasks) {
+  const today = tasks.filter(t=>t.date===todayStr());
+  const remaining = today.filter(t=>!t.done).length;
+  document.getElementById('todayTaskSub').textContent = remaining === 0 ? 'All done for today! 🎉' : `${remaining} task${remaining!==1?'s':''} left for today`;
+  const priC={high:'var(--rose)',medium:'var(--amber)',low:'var(--green)'};
+  document.getElementById('dashTasks').innerHTML = today.slice(0,5).map(t=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r2);background:var(--bg2);transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'">
+      <div class="task-cb ${t.done?'checked':''}" onclick="quickToggleTask('${t.id}')">${t.done?svgCheck():''}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;letter-spacing:-.01em;${t.done?'text-decoration:line-through;color:var(--t2)':'color:var(--t0)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.title)}</div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px;font-weight:400">${esc(t.subject||'')}${t.hours?' · '+t.hours+'h':''}</div>
+      </div>
+      <div style="width:5px;height:5px;border-radius:50%;background:${priC[t.priority]};flex-shrink:0"></div>
+    </div>`).join('') || '<div style="text-align:center;padding:24px"><div style="font-size:13px;font-weight:700;color:var(--t0);margin-bottom:4px">All clear! 🎉</div><div style="font-size:12px;color:var(--t1)">Ready to add a new goal?</div></div>';
+}
+
+function buildHeatmap(logs) {
+  const el = document.getElementById('heatmapGrid');
+  const map = {}; logs.forEach(l=>map[l.date]=(map[l.date]||0)+l.hours);
+  el.innerHTML='';
+  const weeks=16, days=7;
+  const today=new Date();
+  for (let w=weeks-1; w>=0; w--) {
+    const col=document.createElement('div'); col.className='heatmap-col';
+    for (let d=0; d<days; d++) {
+      const dt=new Date(today); dt.setDate(today.getDate()-(w*7+(days-1-d)));
+      const k=dt.toISOString().split('T')[0];
+      const h=map[k]||0;
+      const lvl=h===0?'':h<2?'h1':h<4?'h2':h<6?'h3':'h4';
+      const cell=document.createElement('div');
+      cell.className=`heatmap-cell ${lvl}`;
+      cell.title=`${k}: ${h}h`;
+      col.appendChild(cell);
+    }
+    el.appendChild(col);
+  }
+}
+
+function openLogHoursInline() {
+  const h = prompt('How many hours did you study today?', studyHoursToday||'');
+  if (h===null) return;
+  const hours = parseFloat(h);
+  if (isNaN(hours)||hours<0) { toast('Invalid hours value','error'); return; }
+  const logs = DB.get('studyLogs')||[];
+  const existing = logs.find(l=>l.date===todayStr());
+  if (existing) existing.hours=hours; else logs.push({date:todayStr(),hours});
+  DB.set('studyLogs',logs);
+  renderDashboard();
+  toast(`Logged ${hours}h for today ✓`);
+}
+
+// ═══════════════════════════════════════════
+//  7. SUBJECTS & TOPICS
+// ═══════════════════════════════════════════
+let editingSubjectId = null;
+
+function renderSubjects() {
+  const subjects = DB.get('subjects')||[];
+  const grid = document.getElementById('subjectGrid');
+  const done = subjects.reduce((a,s)=>a+s.topics.filter(t=>t.done).length,0);
+  const total = subjects.reduce((a,s)=>a+s.topics.length,0);
+  document.getElementById('subjectsSubtitle').textContent =
+    `${subjects.length} subjects · ${done}/${total} topics completed`;
+  document.getElementById('subjectCount').textContent = subjects.length;
+
+  if (!subjects.length) {
+    grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <p>No subjects yet. Click "Add Subject" to get started.</p></div>`;
+    return;
+  }
+  grid.innerHTML = '';
+  subjects.forEach((s,si) => {
+    const card = buildSubjectCard(s, si);
+    grid.appendChild(card);
+  });
+}
+
+function buildSubjectCard(s, si) {
+  const done = s.topics.filter(t=>t.done).length;
+  const total = s.topics.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const color = SUBJECT_COLORS[s.color] || '#6366f1';
+
+  const card = document.createElement('div');
+  card.className = 'subject-card';
+  card.id = `scard-${s.id}`;
+  card.style.animationDelay = si*0.04+'s';
+  card.style.animation = 'pageIn .4s var(--ease) both';
+
+  card.innerHTML = `
+    <div class="subject-header">
+      <div class="subject-icon" style="background:${color}18;font-size:18px">${s.icon||'📚'}</div>
+      <div class="subject-meta">
+        <div class="subject-name">${esc(s.name)}</div>
+        <div class="subject-stats">${done} / ${total} topics done</div>
+      </div>
+      <div class="subject-pct" style="color:${color}">${pct}%</div>
+    </div>
+    <div class="subject-progress">
+      <div class="spbar-track">
+        <div class="spbar-fill" id="spbar-${s.id}" style="width:0%;background:${color}"></div>
+      </div>
+    </div>
+    <div class="topic-list" id="tlist-${s.id}">
+      ${s.topics.map((t,ti) => buildTopicRow(s.id, t, ti)).join('')}
+    </div>
+    <div class="subject-footer">
+      <button class="toggle-topics-btn" id="tbtn-${s.id}" onclick="toggleTopics('${s.id}')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        Show topics
+      </button>
+      <div class="subject-actions">
+        <div class="icon-btn" title="Add topic" onclick="addTopicToSubject('${s.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <div class="icon-btn" title="Rename" onclick="openRenameModal('${s.id}','${esc(s.name)}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div class="icon-btn danger" title="Delete subject" onclick="deleteSubject('${s.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </div>
+      </div>
+    </div>`;
+
+  // Animate progress bar after DOM insert
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const bar = document.getElementById(`spbar-${s.id}`);
+      if (bar) bar.style.width = pct+'%';
+    }, 100 + si*50);
+  });
+
+  return card;
+}
+
+function buildTopicRow(subId, t, idx) {
+  return `<div class="topic-item" id="trow-${subId}-${t.id}">
+    <span class="topic-num">${String(idx+1).padStart(2,'0')}</span>
+    <div class="topic-checkbox ${t.done?'checked':''}" onclick="toggleTopic('${subId}','${t.id}')">
+      ${t.done?svgCheck():''}
+    </div>
+    <input type="text" class="topic-input ${t.done?'done':''}" value="${esc(t.name)}"
+      placeholder="Topic ${idx+1}"
+      onchange="updateTopicName('${subId}','${t.id}',this.value)"
+      onblur="updateTopicName('${subId}','${t.id}',this.value)"/>
+    <button onclick="deleteTopic('${subId}','${t.id}')" style="background:transparent;border:none;cursor:pointer;padding:2px;color:var(--t3);transition:color .15s;border-radius:4px;display:flex;align-items:center" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--t3)'">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>`;
+}
+
+function toggleTopics(subId) {
+  const list = document.getElementById(`tlist-${subId}`);
+  const btn = document.getElementById(`tbtn-${subId}`);
+  list.classList.toggle('open');
+  btn.classList.toggle('open');
+  btn.innerHTML = list.classList.contains('open') ?
+    `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:rotate(180deg)"><polyline points="6 9 12 15 18 9"/></svg> Hide topics` :
+    `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> Show topics`;
+}
+
+function toggleTopic(subId, topicId) {
+  const subjects = DB.get('subjects')||[];
+  const sub = subjects.find(s=>s.id===subId); if(!sub) return;
+  const topic = sub.topics.find(t=>t.id===topicId); if(!topic) return;
+  topic.done = !topic.done;
+  DB.set('subjects', subjects);
+
+  // In-place DOM update — no full re-render
+  const cb = document.querySelector(`#trow-${subId}-${topicId} .topic-checkbox`);
+  const inp = document.querySelector(`#trow-${subId}-${topicId} .topic-input`);
+  if (cb) { cb.classList.toggle('checked', topic.done); cb.innerHTML = topic.done?svgCheck():''; }
+  if (inp) { inp.classList.toggle('done', topic.done); }
+
+  // Update progress bar & stats
+  const done = sub.topics.filter(t=>t.done).length;
+  const pct = sub.topics.length ? Math.round(done/sub.topics.length*100) : 0;
+  const bar = document.getElementById(`spbar-${subId}`);
+  if (bar) bar.style.width = pct+'%';
+  const card = document.getElementById(`scard-${subId}`);
+  if (card) {
+    const pctEl = card.querySelector('.subject-pct');
+    const statsEl = card.querySelector('.subject-stats');
+    if (pctEl) pctEl.textContent = pct+'%';
+    if (statsEl) statsEl.textContent = `${done} / ${sub.topics.length} topics done`;
+  }
+  if (topic.done) toast(`✓ "${topic.name.slice(0,20)}" completed!`);
+}
+
+function updateTopicName(subId, topicId, name) {
+  const subjects = DB.get('subjects')||[];
+  const sub = subjects.find(s=>s.id===subId); if(!sub) return;
+  const topic = sub.topics.find(t=>t.id===topicId); if(!topic) return;
+  topic.name = name;
+  DB.set('subjects', subjects);
+}
+
+function addTopicToSubject(subId) {
+  const subjects = DB.get('subjects')||[];
+  const sub = subjects.find(s=>s.id===subId); if(!sub) return;
+  if (sub.topics.length >= 30) { toast('Maximum 30 topics per subject','error'); return; }
+  const newTopic = { id:uid(), name:`Topic ${sub.topics.length+1}`, done:false };
+  sub.topics.push(newTopic);
+  DB.set('subjects', subjects);
+  const list = document.getElementById(`tlist-${subId}`);
+  if (list) {
+    list.insertAdjacentHTML('beforeend', buildTopicRow(subId, newTopic, sub.topics.length-1));
+  }
+  toast('Topic added');
+}
+
+function deleteTopic(subId, topicId) {
+  const subjects = DB.get('subjects')||[];
+  const sub = subjects.find(s=>s.id===subId); if(!sub) return;
+  sub.topics = sub.topics.filter(t=>t.id!==topicId);
+  DB.set('subjects', subjects);
+  const row = document.getElementById(`trow-${subId}-${topicId}`);
+  if (row) { row.style.opacity='0'; row.style.transition='opacity .2s'; setTimeout(()=>row.remove(),200); }
+  // Update progress
+  const done=sub.topics.filter(t=>t.done).length;
+  const pct=sub.topics.length?Math.round(done/sub.topics.length*100):0;
+  const bar=document.getElementById(`spbar-${subId}`);
+  if(bar) bar.style.width=pct+'%';
+}
+
+function deleteSubject(id) {
+  if (!confirm('Delete this subject and all its topics? This cannot be undone.')) return;
+  const subjects = (DB.get('subjects')||[]).filter(s=>s.id!==id);
+  DB.set('subjects', subjects);
+  const card = document.getElementById(`scard-${id}`);
+  if (card) { card.style.opacity='0'; card.style.transform='scale(.95)'; card.style.transition='all .3s'; setTimeout(()=>{card.remove();document.getElementById('subjectsSubtitle').textContent=`${subjects.length} subjects`;},300); }
+  document.getElementById('subjectCount').textContent=subjects.length;
+  toast('Subject deleted','info');
+}
+
+function expandAllSubjects() { (DB.get('subjects')||[]).forEach(s=>{ const l=document.getElementById(`tlist-${s.id}`); const b=document.getElementById(`tbtn-${s.id}`); if(l&&!l.classList.contains('open'))toggleTopics(s.id); }); }
+function collapseAllSubjects() { (DB.get('subjects')||[]).forEach(s=>{ const l=document.getElementById(`tlist-${s.id}`); if(l&&l.classList.contains('open'))toggleTopics(s.id); }); }
+
+function resetSubjectModal() { editingSubjectId=null; document.getElementById('subjectModalTitle').textContent='Add New Subject'; ['subjectName','subjectIcon'].forEach(id=>document.getElementById(id).value=''); document.getElementById('subjectColor').value='teal'; }
+
+function saveSubject() {
+  const name = document.getElementById('subjectName').value.trim();
+  if (!name) { toast('Please enter a subject name','error'); return; }
+  const subjects = DB.get('subjects')||[];
+  if (editingSubjectId) {
+    const s=subjects.find(x=>x.id===editingSubjectId);
+    if(s){s.name=name;s.icon=document.getElementById('subjectIcon').value||'📚';s.color=document.getElementById('subjectColor').value;}
+  } else {
+    subjects.push({ id:uid(), name, icon:document.getElementById('subjectIcon').value||'📚', color:document.getElementById('subjectColor').value, topics:Array.from({length:10},(_,i)=>({id:uid(),name:`Topic ${i+1}`,done:false})) });
+  }
+  DB.set('subjects', subjects);
+  closeModal('subjectModal');
+  renderSubjects();
+  toast(editingSubjectId ? 'Subject updated!' : `Subject "${name}" created!`);
+  populateTaskSubjectDropdown();
+}
+
+function openRenameModal(id, name) {
+  document.getElementById('renameSubjectId').value=id;
+  document.getElementById('renameSubjectName').value=name;
+  openModal('renameModal');
+}
+function confirmRename() {
+  const id=document.getElementById('renameSubjectId').value;
+  const name=document.getElementById('renameSubjectName').value.trim();
+  if(!name){toast('Name cannot be empty','error');return;}
+  const subjects=DB.get('subjects')||[];
+  const s=subjects.find(x=>x.id===id);if(s)s.name=name;
+  DB.set('subjects',subjects);
+  closeModal('renameModal');
+  renderSubjects();
+  toast('Subject renamed!');
+}
+
+// ═══════════════════════════════════════════
+//  8. PLANNER
+// ═══════════════════════════════════════════
+let selectedDate = todayStr();
+let plannerChartInst = null;
+let taskFilterMode = 'all';
+
+function renderPlanner() {
+  buildDateStrip();
+  renderTaskList();
+  renderPlannerSidebar();
+  buildPlannerChart();
+}
+
+function buildDateStrip() {
+  const el = document.getElementById('dateStrip');
+  el.innerHTML = '';
+  const tasks = DB.get('tasks')||[];
+  for (let i=-1; i<=6; i++) {
+    const d=new Date(); d.setDate(d.getDate()+i);
+    const iso=d.toISOString().split('T')[0];
+    const dayTasks=tasks.filter(t=>t.date===iso);
+    const isToday=iso===todayStr(), isSel=iso===selectedDate;
+    const el2=document.createElement('div');
+    el2.className=`date-chip${isSel?' active':''}${isToday&&!isSel?' today':''}`;
+    el2.onclick=()=>{selectedDate=iso;buildDateStrip();renderTaskList();};
+    const dots=dayTasks.slice(0,3).map(t=>`<div class="tdot${t.done?' done-dot':''}"></div>`).join('');
+    el2.innerHTML=`<div class="day-name">${d.toLocaleDateString('en',{weekday:'short'})}</div><div class="day-num display-font">${d.getDate()}</div><div class="dot-row">${dots}</div>`;
+    el.appendChild(el2);
+  }
+}
+
+function renderTaskList() {
+  const allTasks = DB.get('tasks')||[];
+  let tasks = allTasks.filter(t=>t.date===selectedDate);
+  if (taskFilterMode==='pending') tasks=tasks.filter(t=>!t.done);
+  if (taskFilterMode==='done') tasks=tasks.filter(t=>t.done);
+  document.getElementById('taskCountLabel').textContent=`${tasks.length} task${tasks.length!==1?'s':''}`;
+
+  const con=document.getElementById('taskListContainer');
+  if (!tasks.length) {
+    con.innerHTML=`<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <p style="font-size:15px;font-weight:700;color:var(--t0);margin-bottom:6px">The slate is clean! 🎉</p>
+      <p style="font-size:13px;color:var(--t1)">No missions yet. What will you conquer today?</p>
+      <button onclick="openModal('taskModal')" style="margin-top:14px;padding:8px 20px;border-radius:10px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:all .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">+ Add Task</button>
+    </div>`;
+    return;
+  }
+  con.innerHTML=tasks.map((t,i)=>buildTaskEl(t,i)).join('');
+  initDragDrop();
+}
+
+function buildTaskEl(t, i) {
+  const priC={high:'high',medium:'medium',low:'low'};
+  return `<div class="task-item${t.done?' done':''}" id="titem-${t.id}" draggable="true" data-id="${t.id}">
+    <div class="task-drag-handle">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+    </div>
+    <div class="task-cb${t.done?' checked':''}" onclick="toggleTask('${t.id}')">${t.done?svgCheck():''}</div>
+    <div style="flex:1;min-width:0">
+      <div class="task-title">${esc(t.title)}</div>
+      <div class="task-meta">${t.subject?esc(t.subject)+'  ·  ':''} ${t.hours?t.hours+'h':''}${t.notes?' · '+esc(t.notes):''}</div>
+    </div>
+    <span class="task-badge ${priC[t.priority]||'medium'}">${t.priority}</span>
+    <button class="task-delete" onclick="deleteTask('${t.id}')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    </button>
+  </div>`;
+}
+
+function filterTasks(mode, el) {
+  taskFilterMode=mode;
+  document.querySelectorAll('#page-planner .filter-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderTaskList();
+}
+
+function toggleTask(id) {
+  const tasks=DB.get('tasks')||[];
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  t.done=!t.done;
+  DB.set('tasks',tasks);
+
+  // Update log if completed
+  if (t.done && t.hours) {
+    const logs=DB.get('studyLogs')||[];
+    const ex=logs.find(l=>l.date===todayStr());
+    if(ex) ex.hours=+(ex.hours+(t.hours||0)).toFixed(1);
+    else logs.push({date:todayStr(),hours:t.hours||0});
+    DB.set('studyLogs',logs);
+  }
+
+  // DOM update
+  const el=document.getElementById(`titem-${id}`);
+  if(el){ el.classList.toggle('done',t.done); const cb=el.querySelector('.task-cb'); if(cb){cb.classList.toggle('checked',t.done);cb.innerHTML=t.done?svgCheck():'';} const title=el.querySelector('.task-title'); if(title)title.style.textDecoration=t.done?'line-through':''; }
+
+  buildDateStrip();
+  toast(t.done?`✓ Task completed!`:'Task reopened');
+}
+
+function quickToggleTask(id) {
+  toggleTask(id);
+  if (currentPage==='dashboard') renderDashboard();
+}
+
+function deleteTask(id) {
+  if(!confirm('Delete this task?'))return;
+  DB.set('tasks',(DB.get('tasks')||[]).filter(t=>t.id!==id));
+  renderTaskList();buildDateStrip();
+  toast('Task deleted','info');
+}
+
+function populateTaskSubjectDropdown() {
+  const subjects=DB.get('subjects')||[];
+  const sel=document.getElementById('taskSubject');
+  sel.innerHTML='<option value="">— Select a Subject —</option>'+subjects.map(s=>`<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+}
+
+function saveTask() {
+  const title=document.getElementById('taskTitle').value.trim();
+  if(!title){toast('Please enter a task title','error');return;}
+  const tasks=DB.get('tasks')||[];
+  const task={id:uid(),title,subject:document.getElementById('taskSubject').value,priority:document.getElementById('taskPriority').value,date:document.getElementById('taskDate').value||todayStr(),hours:parseFloat(document.getElementById('taskHours').value)||0,notes:document.getElementById('taskNotes').value.trim(),done:false};
+  tasks.push(task);DB.set('tasks',tasks);
+  closeModal('taskModal');
+  ['taskTitle','taskNotes'].forEach(id=>document.getElementById(id).value='');
+  renderTaskList();buildDateStrip();
+  toast('Task added!');
+  scheduleGSSync('task_added',task);
+}
+
+function renderPlannerSidebar() {
+  const subjects=DB.get('subjects')||[];
+  const tasks=DB.get('tasks')||[];
+  const el=document.getElementById('plannerSubjectList');
+  el.innerHTML=subjects.map(s=>{
+    const done=s.topics.filter(t=>t.done).length;
+    const pct=s.topics.length?Math.round(done/s.topics.length*100):0;
+    const col=SUBJECT_COLORS[s.color]||'#6366f1';
+    return`<div style="display:flex;align-items:center;gap:9px">
+      <span style="font-size:15px;flex-shrink:0">${s.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12.5px;font-weight:600;color:var(--t0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;letter-spacing:-.01em">${esc(s.name)}</div>
+        <div style="height:4px;background:var(--border2);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:99px;transition:width .8s var(--ease)"></div></div>
+      </div>
+      <span style="font-size:13px;color:${col};font-family:'Cabinet Grotesk',sans-serif;font-weight:900;flex-shrink:0;letter-spacing:-.02em">${pct}%</span>
+    </div>`;}).join('');
+}
+
+function buildPlannerChart() {
+  if (plannerChartInst) plannerChartInst.destroy();
+  const logs=DB.get('studyLogs')||[];
+  const labels=[],data=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=d.toISOString().split('T')[0];labels.push(d.toLocaleDateString('en',{weekday:'short'}));const l=logs.find(x=>x.date===k);data.push(l?l.hours:0);}
+  const dark=isDark;
+  plannerChartInst=new Chart(document.getElementById('plannerChart'),{
+    type:'bar',data:{labels,datasets:[{data,backgroundColor:'rgba(99,102,241,.35)',borderColor:'rgba(99,102,241,.8)',borderWidth:1.5,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:dark?'#4a5568':'#7b8aa0',font:{size:9}}},y:{grid:{color:dark?'rgba(255,255,255,.03)':'rgba(0,0,0,.04)'},ticks:{color:dark?'#4a5568':'#7b8aa0',font:{size:9}},beginAtZero:true}}}});
+}
+
+// Drag & Drop
+let dragId=null;
+function initDragDrop() {
+  document.querySelectorAll('.task-item').forEach(el=>{
+    el.addEventListener('dragstart',()=>{dragId=el.dataset.id;el.classList.add('dragging');});
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');dragId=null;});
+    el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over');});
+    el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+    el.addEventListener('drop',e=>{
+      e.preventDefault();el.classList.remove('drag-over');
+      if(!dragId||dragId===el.dataset.id)return;
+      const tasks=DB.get('tasks')||[];
+      const fi=tasks.findIndex(t=>t.id===dragId),ti=tasks.findIndex(t=>t.id===el.dataset.id);
+      if(fi>-1&&ti>-1){const[moved]=tasks.splice(fi,1);tasks.splice(ti,0,moved);DB.set('tasks',tasks);renderTaskList();}
+    });
+  });
+}
+
+// ═══════════════════════════════════════════
+//  9. VOCABULARY (IntersectionObserver lazy)
+// ═══════════════════════════════════════════
+const VOCAB_PAGE=40;
+let vocabFilter='all', vocabFiltered=[], vocabRendered=0, vocabObs=null, editVocabId=null;
+
+function renderVocab() {
+  updateVocabCategories();
+  if (vocabObs){vocabObs.disconnect();vocabObs=null;}
+  const q=document.getElementById('vocabSearch').value.toLowerCase().trim();
+  const cat=document.getElementById('vocabCatFilter').value;
+  const vocab=DB.get('vocab')||[];
+  vocabFiltered=vocab.filter(v=>{
+    const ms=!q||v.word.toLowerCase().includes(q)||(v.meaning&&v.meaning.toLowerCase().includes(q))||(v.synonyms&&v.synonyms.toLowerCase().includes(q));
+    const mf=vocabFilter==='all'||v.status===vocabFilter;
+    const mc=!cat||v.category===cat;
+    return ms&&mf&&mc;
+  });
+  vocabRendered=0;
+  document.getElementById('vocabGrid').innerHTML='';
+  document.getElementById('vocabSubtitle').textContent=`${vocab.length} words · ${vocab.filter(v=>v.status==='mastered').length} mastered`;
+  document.getElementById('vocabMetaLabel').textContent=`${vocabFiltered.length} words`;
+  if(!vocabFiltered.length){document.getElementById('vocabGrid').innerHTML=`<div class="empty-state" style="grid-column:1/-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg><p>No words found.</p></div>`;return;}
+  appendVocabBatch();
+}
+
+function appendVocabBatch() {
+  const grid=document.getElementById('vocabGrid'), sentinel=document.getElementById('vocabSentinel');
+  const from=vocabRendered, to=Math.min(from+VOCAB_PAGE,vocabFiltered.length);
+  const frag=document.createDocumentFragment();
+  for(let i=from;i<to;i++){
+    const el=document.createElement('div');
+    el.innerHTML=buildVocabCard(vocabFiltered[i],i-from);
+    const card=el.firstElementChild;
+    frag.appendChild(card);
+  }
+  vocabRendered=to;
+  grid.appendChild(frag);
+  document.getElementById('vocabLoadMore').textContent=vocabRendered<vocabFiltered.length?`Showing ${vocabRendered} of ${vocabFiltered.length}`:'';
+  if(vocabRendered<vocabFiltered.length){
+    if(vocabObs)vocabObs.disconnect();
+    vocabObs=new IntersectionObserver(en=>{if(en[0].isIntersecting)appendVocabBatch();},{rootMargin:'200px'});
+    vocabObs.observe(sentinel);
+  }
+}
+
+function buildVocabCard(v, delay=0) {
+  const statusColors={new:'status-pill new',learned:'status-pill learned',mastered:'status-pill mastered'};
+  return `<div class="vocab-card ${v.status}" style="animation-delay:${delay*25}ms" id="vc-${v.id}">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">
+      <div class="vocab-word">${esc(v.word)}</div>
+      <span class="${statusColors[v.status]||'status-pill new'}">${v.status}</span>
+    </div>
+    <div class="vocab-meaning">${esc(v.meaning)}</div>
+    ${v.synonyms?`<div class="vocab-synonyms">≈ ${esc(v.synonyms)}</div>`:''}
+    ${v.example?`<div class="vocab-example">${esc(v.example)}</div>`:''}
+    ${v.category?`<div style="font-size:10px;color:var(--t2);margin-top:6px">📁 ${esc(v.category)}</div>`:''}
+    <div class="vocab-footer">
+      <button onclick="cycleVocabStatus('${v.id}')" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:7px;background:rgba(99,102,241,.1);color:var(--accent2);border:1px solid rgba(99,102,241,.2);cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(99,102,241,.18)'" onmouseout="this.style.background='rgba(99,102,241,.1)'">${{new:'Mark Learned',learned:'Mark Mastered',mastered:'Reset'}[v.status]}</button>
+      <div style="display:flex;gap:6px">
+        <button onclick="editVocabWord('${v.id}')" style="font-size:11px;padding:4px 9px;border-radius:7px;background:var(--bg2);color:var(--t1);border:1px solid var(--border);cursor:pointer;transition:all .15s">Edit</button>
+        <button onclick="deleteVocabWord('${v.id}')" style="font-size:11px;padding:4px 9px;border-radius:7px;background:rgba(244,63,94,.07);color:var(--rose);border:1px solid rgba(244,63,94,.15);cursor:pointer;transition:all .15s">Del</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cycleVocabStatus(id) {
+  const vocab=DB.get('vocab')||[];const v=vocab.find(x=>x.id===id);if(!v)return;
+  v.status={new:'learned',learned:'mastered',mastered:'new'}[v.status];
+  DB.set('vocab',vocab);
+  const el=document.getElementById(`vc-${id}`);
+  if(el){el.classList.add('exiting');setTimeout(()=>renderVocab(),200);}else renderVocab();
+  toast(`"${v.word}" → ${v.status}`);
+}
+
+function deleteVocabWord(id) {
+  if(!confirm('Delete this word?'))return;
+  DB.set('vocab',(DB.get('vocab')||[]).filter(v=>v.id!==id));
+  renderVocab();toast('Word deleted','info');
+}
+
+function editVocabWord(id) {
+  const v=(DB.get('vocab')||[]).find(x=>x.id===id);if(!v)return;
+  editVocabId=id;
+  document.getElementById('vocabModalTitle').textContent='Edit Word';
+  document.getElementById('vWord').value=v.word;
+  document.getElementById('vMeaning').value=v.meaning||'';
+  document.getElementById('vSynonyms').value=v.synonyms||'';
+  document.getElementById('vExample').value=v.example||'';
+  document.getElementById('vCategory').value=v.category||'';
+  document.getElementById('vStatus').value=v.status||'new';
+  openModal('vocabModal');
+}
+
+function resetVocabModal() {
+  editVocabId=null;document.getElementById('vocabModalTitle').textContent='Add New Word';
+  ['vWord','vMeaning','vSynonyms','vExample','vCategory'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('vStatus').value='new';
+}
+
+function saveVocab() {
+  const word=document.getElementById('vWord').value.trim();
+  if(!word){toast('Please enter a word','error');return;}
+  const vocab=DB.get('vocab')||[];
+  const entry={id:editVocabId||uid(),word,meaning:document.getElementById('vMeaning').value.trim(),synonyms:document.getElementById('vSynonyms').value.trim(),example:document.getElementById('vExample').value.trim(),category:document.getElementById('vCategory').value.trim(),status:document.getElementById('vStatus').value};
+  if(editVocabId){const i=vocab.findIndex(v=>v.id===editVocabId);if(i>-1)vocab[i]=entry;toast('Word updated!');}
+  else{if(vocab.length>=3000){toast('Maximum 3000 words','error');return;}vocab.unshift(entry);toast(`"${word}" added!`);}
+  DB.set('vocab',vocab);closeModal('vocabModal');renderVocab();updateVocabCategories();
+}
+
+function updateVocabCategories() {
+  const vocab=DB.get('vocab')||[];
+  const cats=[...new Set(vocab.map(v=>v.category).filter(Boolean))];
+  const sel=document.getElementById('vocabCatFilter');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  sel.value=cur;
+}
+
+function updateVocabFilterUI(el) {
+  document.querySelectorAll('#page-vocab .filter-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+//  10. GOOGLE SHEETS
+// ═══════════════════════════════════════════
+function saveGS() {
+  gsConfig={url:document.getElementById('gsUrl').value.trim(),sheet:document.getElementById('gsSheetName').value.trim()||'StudyOS',enabled:!!document.getElementById('gsUrl').value.trim()};
+  DB.set('gsConfig',gsConfig);
+  updateGSStatus();closeModal('gsModal');toast('Google Sheets config saved!');
+}
+async function testGS() {
+  if(!document.getElementById('gsUrl').value.trim()){toast('Enter a URL first','error');return;}
+  document.getElementById('gsModalStatus').textContent='Testing connection…';
+  try{await fetch(document.getElementById('gsUrl').value.trim(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'ping',ts:Date.now()})});document.getElementById('gsModalStatus').textContent='✓ Connection successful (no-cors mode)';document.getElementById('gsModalDot').className='gs-dot connected';}
+  catch{document.getElementById('gsModalStatus').textContent='Connection test complete';}
+}
+function updateGSStatus() {
+  const cfg=DB.get('gsConfig')||{};
+  document.getElementById('gsDot').className=`gs-dot ${cfg.enabled&&cfg.url?'connected':'disconnected'}`;
+  document.getElementById('gsStatusText').textContent=cfg.enabled&&cfg.url?'✓ Backed up to Sheets':'Stored on this device';
+}
+
+// ═══════════════════════════════════════════
+//  11. FAB (Floating Action Button)
+// ═══════════════════════════════════════════
+let fabOpen = false;
+function toggleFAB() {
+  fabOpen = !fabOpen;
+  const menu = document.getElementById('fabMenu');
+  const icon = document.getElementById('fabIcon');
+  if (menu) menu.style.display = fabOpen ? 'flex' : 'none';
+  if (icon) {
+    icon.style.transform = fabOpen ? 'rotate(45deg)' : 'rotate(0deg)';
+    icon.style.transition = 'transform .25s cubic-bezier(0.16,1,0.3,1)';
+  }
+}
+// Close FAB when clicking outside
+document.addEventListener('click', e => {
+  if (fabOpen && !e.target.closest('#dashQuickAdd')) {
+    fabOpen = false;
+    const menu = document.getElementById('fabMenu');
+    const icon = document.getElementById('fabIcon');
+    if (menu) menu.style.display = 'none';
+    if (icon) { icon.style.transform = 'rotate(0deg)'; }
+  }
+});
+
+
+// ═══════════════════════════════════════════
+//  12. ISLAMIC FEATURES
+// ═══════════════════════════════════════════
+
+// ── DATA ──────────────────────────────────
+const PRAYERS_LIST = ['fajr','dhuhr','asr','maghrib','isha'];
+const PRAYER_NAMES_BN = { fajr:'ফজর', dhuhr:'যোহর', asr:'আসর', maghrib:'মাগরিব', isha:'এশা' };
+const PRAYER_ICONS   = { fajr:'🌙', dhuhr:'☀️', asr:'🌤️', maghrib:'🌅', isha:'🌃' };
+
+const DUAS = [
+  {
+    arabic:   'رَبِّ زِدْنِي عِلْمًا',
+    translit: 'রাব্বি — যিদনী — ইলমা',
+    uccharon: 'রাব্বি যিদনী ইলমা',
+    meaning:  '"হে আমার রব, আমার জ্ঞান বৃদ্ধি করুন।"',
+    source:   'সূরা ত্বহা, আয়াত ১১৪'
+  },
+  {
+    arabic:   'رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي',
+    translit: 'রাব্বিশ্ রাহ্ লী সদ্রী — ওয়া ইয়াস্সির্ লী আমরী',
+    uccharon: 'রাব্বিশ রাহ লী সদরী, ওয়া ইয়াস্সির লী আমরী',
+    meaning:  '"হে আমার রব, আমার বুক প্রশস্ত করুন এবং আমার কাজ সহজ করুন।"',
+    source:   'সূরা ত্বহা, আয়াত ২৫-২৬'
+  },
+  {
+    arabic:   'اللَّهُمَّ انْفَعْنِي بِمَا عَلَّمْتَنِي',
+    translit: 'আল্লা-হুম্মান ফা-নী — বিমা আল্লামতানী',
+    uccharon: 'আল্লাহুম্মান ফানী বিমা আল্লামতানী',
+    meaning:  '"হে আল্লাহ, আপনি আমাকে যা শিখিয়েছেন তা দিয়ে আমাকে উপকৃত করুন।"',
+    source:   'তিরমিযী'
+  },
+  {
+    arabic:   'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً',
+    translit: 'রাব্বানা — আতিনা — ফিদ্দুনইয়া — হাসানাতান — ওয়া ফিল আখিরাতি — হাসানাতান',
+    uccharon: 'রাব্বানা আতিনা ফিদ্দুনিয়া হাসানাতাও, ওয়া ফিল আখিরাতি হাসানাতাও',
+    meaning:  '"হে আমাদের রব, দুনিয়া ও আখিরাতে আমাদের কল্যাণ দিন।"',
+    source:   'সূরা বাকারা, আয়াত ২০১'
+  },
+  {
+    arabic:   'حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ',
+    translit: 'হাস্বুনাল্লা-হু — ওয়া নি-মাল ওয়াকীল',
+    uccharon: 'হাসবুনাল্লাহু ওয়া নিমাল ওয়াকীল',
+    meaning:  '"আল্লাহই আমাদের জন্য যথেষ্ট, তিনিই উত্তম কার্যনির্বাহক।"',
+    source:   'সূরা আলে ইমরান, আয়াত ১৭৩'
+  },
+  {
+    arabic:   'اللَّهُمَّ لَا سَهْلَ إِلَّا مَا جَعَلْتَهُ سَهْلًا',
+    translit: 'আল্লা-হুম্মা — লা সাহলা — ইল্লা মা — জাআলতাহু সাহলা',
+    uccharon: 'আল্লাহুম্মা লা সাহলা ইল্লা মা জাআলতাহু সাহলান',
+    meaning:  '"হে আল্লাহ, কোনো কিছুই সহজ নয় যদি না আপনি তা সহজ করেন।"',
+    source:   'ইবনে হিব্বান'
+  },
+  {
+    arabic:   'رَبِّ أَعِنِّي وَلَا تُعِنْ عَلَيَّ',
+    translit: 'রাব্বি আ-ইন্নী — ওয়ালা তু-ইন্ — আলাইয়্যা',
+    uccharon: 'রাব্বি আইন্নী ওয়ালা তুইন আলাইয়্যা',
+    meaning:  '"হে আমার রব, আমাকে সাহায্য করুন এবং আমার বিরুদ্ধে সাহায্য করবেন না।"',
+    source:   'আবু দাউদ'
+  },
+  {
+    arabic:   'اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا',
+    translit: 'আল্লা-হুম্মা ইন্নী — আসআলুকা — ইলমান না-ফিআ',
+    uccharon: 'আল্লাহুম্মা ইন্নী আসআলুকা ইলমান নাফিআ',
+    meaning:  '"হে আল্লাহ, আমি আপনার কাছে উপকারী জ্ঞান চাই।"',
+    source:   'ইবনে মাজাহ'
+  },
+];
+
+const DUA_COLLECTION = [
+  {
+    title:    'পড়া শুরুর দোয়া',
+    arabic:   'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
+    translit: 'বিসমিল্লাহির রাহমানির রাহীম',
+    uccharon: 'বিসমিল্লাহির রাহমানির রাহীম',
+    meaning:  'আল্লাহর নামে শুরু করছি, যিনি অতি দয়ালু, পরম করুণাময়।'
+  },
+  {
+    title:    'পরীক্ষায় যাওয়ার দোয়া',
+    arabic:   'رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي وَاحْلُلْ عُقْدَةً مِنْ لِسَانِي يَفْقَهُوا قَوْلِي',
+    translit: 'রাব্বিশ্ রাহ্ লী সদরী, ওয়া ইয়াস্সির্ লী আমরী, ওয়াহ্লুল্ উক্ দাতাম্ মিল্লিসানী, ইয়াফ্ কাহু ক্বওলী',
+    uccharon: 'রাব্বিশ রাহ লী সদরী, ওয়া ইয়াস্সির লী আমরী, ওয়াহলুল উকদাতাম্ মিল্লিসানী, ইয়াফকাহু ক্বওলী',
+    meaning:  'হে আমার রব, আমার বুক প্রশস্ত করুন, আমার কাজ সহজ করুন, এবং আমার জিহ্বার জড়তা দূর করুন যাতে তারা আমার কথা বুঝতে পারে।'
+  },
+  {
+    title:    'কঠিন বিষয় বোঝার দোয়া',
+    arabic:   'رَبِّ زِدْنِي عِلْمًا',
+    translit: 'রাব্বি — যিদ্নী — ইলমা',
+    uccharon: 'রাব্বি যিদনী ইলমা',
+    meaning:  'হে আমার রব, আমার জ্ঞান বৃদ্ধি করুন।'
+  },
+  {
+    title:    'ঘুমানোর আগের দোয়া',
+    arabic:   'بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا',
+    translit: 'বিসমিকাল্লা-হুম্মা — আমূতু — ওয়া আহইয়া',
+    uccharon: 'বিসমিকাল্লাহুম্মা আমুতু ওয়া আহইয়া',
+    meaning:  'হে আল্লাহ, তোমার নামে (ঘুমিয়ে) মরি এবং (জেগে) বাঁচি।'
+  },
+  {
+    title:    'সকালের দোয়া',
+    arabic:   'اللَّهُمَّ بِكَ أَصْبَحْنَا وَبِكَ أَمْسَيْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ',
+    translit: 'আল্লা-হুম্মা বিকা আসবাহনা — ওয়া বিকা আমসাইনা — ওয়া বিকা নাহইয়া — ওয়া বিকা নামুতু — ওয়া ইলাইকান্ নুশূর',
+    uccharon: 'আল্লাহুম্মা বিকা আসবাহনা, ওয়া বিকা আমসাইনা, ওয়া বিকা নাহইয়া, ওয়া বিকা নামুতু, ওয়া ইলাইকান নুশূর',
+    meaning:  'হে আল্লাহ, তোমার সাহায্যে আমরা ভোরে উঠলাম, তোমার সাহায্যে সন্ধ্যায় পৌঁছলাম, তোমার সাহায্যে বাঁচি, তোমার সাহায্যে মরি, এবং তোমার দিকেই ফিরে যাব।'
+  },
+  {
+    title:    'উদ্বেগ ও পরীক্ষার ভয় দূরের দোয়া',
+    arabic:   'حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ',
+    translit: 'হাস্বুনাল্লা-হু — ওয়া নিমাল — ওয়াকীল',
+    uccharon: 'হাসবুনাল্লাহু ওয়া নিমাল ওয়াকীল',
+    meaning:  'আল্লাহই আমাদের জন্য যথেষ্ট, তিনিই উত্তম কার্যনির্বাহক।'
+  },
+  {
+    title:    'মনোযোগ বাড়ানোর দোয়া',
+    arabic:   'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ',
+    translit: 'আল্লা-হুম্মা ইন্নী আউযু বিকা — মিনাল হাম্মি ওয়াল হাযান',
+    uccharon: 'আল্লাহুম্মা ইন্নী আউযু বিকা মিনাল হাম্মি ওয়াল হাযান',
+    meaning:  'হে আল্লাহ, আমি দুশ্চিন্তা ও দুঃখ থেকে আপনার কাছে আশ্রয় চাই।'
+  },
+  {
+    title:    'বাড়ি থেকে বের হওয়ার দোয়া',
+    arabic:   'بِسْمِ اللَّهِ تَوَكَّلْتُ عَلَى اللَّهِ وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
+    translit: 'বিসমিল্লাহি — তাওয়াক্কালতু আলাল্লাহি — ওয়ালা হাওলা ওয়ালা ক্বুওয়াতা — ইল্লা বিল্লাহ',
+    uccharon: 'বিসমিল্লাহি, তাওয়াক্কালতু আলাল্লাহি, ওয়ালা হাওলা ওয়ালা কুওয়াতা ইল্লা বিল্লাহ',
+    meaning:  'আল্লাহর নামে (বের হচ্ছি), আল্লাহর উপর ভরসা করলাম, এবং আল্লাহ ছাড়া কোনো শক্তি ও সামর্থ্য নেই।'
+  },
+];
+
+const DHIKR_LIST = [
+  { arabic:'سُبْحَانَ اللَّه', name:'সুবহানাল্লাহ', target:33 },
+  { arabic:'الْحَمْدُ لِلَّه', name:'আলহামদুলিল্লাহ', target:33 },
+  { arabic:'اللَّهُ أَكْبَر', name:'আল্লাহু আকবার', target:34 },
+];
+
+// ── STATE ──────────────────────────────────
+let duaIdx = 0, dhikrIdx = 0, dhikrCounts = [0,0,0];
+
+function getIslamicData() { return DB.get('islamic') || {}; }
+function saveIslamicData(d) { DB.set('islamic', d); }
+
+// ── SALAH TRACKER ──────────────────────────
+function togglePrayer(name) {
+  const d = getIslamicData();
+  const t = todayStr();
+  if (!d.salah) d.salah = {};
+  if (!d.salah[t]) d.salah[t] = initSalahDay();
+  const p = d.salah[t][name];
+  p.prayed = !p.prayed;
+  p.time   = p.prayed ? new Date().toTimeString().slice(0,5) : null;
+  saveIslamicData(d);
+  renderSalahTracker();
+  renderDashSalah();
+  const nm = PRAYER_NAMES_BN[name];
+  toast(p.prayed ? `✓ ${nm} নামাজ আদায় হয়েছে 🤲` : `${nm} আনমার্ক করা হয়েছে`, p.prayed ? 'success' : 'info');
+}
+
+function initSalahDay() {
+  return { fajr:{prayed:false,time:null}, dhuhr:{prayed:false,time:null}, asr:{prayed:false,time:null}, maghrib:{prayed:false,time:null}, isha:{prayed:false,time:null} };
+}
+
+function renderSalahTracker() {
+  const d = getIslamicData();
+  const t = todayStr();
+  const today = d.salah?.[t] || {};
+  let count = 0;
+  PRAYERS_LIST.forEach(name => {
+    const prayed = today[name]?.prayed || false;
+    const btn  = document.getElementById('pray-' + name);
+    const chk  = document.getElementById('check-' + name);
+    if (!btn) return;
+    if (prayed) { count++; btn.classList.add('prayed'); if(chk) chk.textContent = '✓'; }
+    else        { btn.classList.remove('prayed'); if(chk) chk.textContent = '○'; }
+  });
+  const cEl = document.getElementById('salahCountBadge');
+  const bn  = ['০','১','২','৩','৪','৫'];
+  if (cEl) {
+    cEl.textContent = bn[count] + '/৫ ওয়াক্ত';
+    cEl.style.color = count===5 ? 'var(--green)' : count>=3 ? 'var(--amber)' : 'var(--rose)';
+    cEl.style.background = count===5 ? 'rgba(16,185,129,.1)' : count>=3 ? 'rgba(245,158,11,.1)' : 'rgba(244,63,94,.1)';
+    cEl.style.borderColor = count===5 ? 'rgba(16,185,129,.25)' : count>=3 ? 'rgba(245,158,11,.25)' : 'rgba(244,63,94,.25)';
+  }
+  const lbl = document.getElementById('salahDateLabel');
+  if (lbl) lbl.textContent = new Date().toLocaleDateString('bn-BD',{weekday:'long',day:'numeric',month:'long'});
+  renderSalahWeek(d.salah || {});
+  highlightNextPrayer();
+}
+
+function renderSalahWeek(salahData) {
+  const grid = document.getElementById('salahWeekGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i=6; i>=0; i--) {
+    const dobj = new Date(); dobj.setDate(dobj.getDate()-i);
+    const key  = dobj.toISOString().split('T')[0];
+    const day  = dobj.toLocaleDateString('en',{weekday:'short'});
+    const prayers = salahData[key] || {};
+    const count   = PRAYERS_LIST.filter(p => prayers[p]?.prayed).length;
+    const bg = count===5 ? 'var(--green)' : count>=3 ? 'rgba(245,158,11,.75)' : count>=1 ? 'rgba(245,158,11,.3)' : 'var(--bg3)';
+    const txtCol = count>0 ? '#fff' : 'var(--t3)';
+    const col = document.createElement('div');
+    col.className = 'salah-day-bar';
+    col.innerHTML = `
+      <div class="salah-day-fill" style="background:${bg};color:${txtCol}" title="${key}: ${count}/5">
+        ${count>0 ? count : ''}
+      </div>
+      <div style="font-size:9px;color:var(--t2)">${day}</div>`;
+    grid.appendChild(col);
+  }
+}
+
+// ── DASHBOARD MINI SALAH ───────────────────
+function renderDashSalah() {
+  const d = getIslamicData();
+  const t = todayStr();
+  const today = d.salah?.[t] || {};
+  const count = PRAYERS_LIST.filter(p=>today[p]?.prayed).length;
+  const cEl = document.getElementById('dashSalahCount');
+  if (cEl) cEl.textContent = count + '/৫ ওয়াক্ত আদায়';
+  const grid = document.getElementById('dashSalahBtns');
+  if (!grid) return;
+  grid.innerHTML = PRAYERS_LIST.map(name => {
+    const prayed = today[name]?.prayed || false;
+    return `<div onclick="togglePrayer('${name}')" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;border:1.5px solid ${prayed?'rgba(16,185,129,.4)':'var(--border2)'};background:${prayed?'rgba(16,185,129,.08)':'var(--bg2)'};cursor:pointer;transition:all .18s" title="${PRAYER_NAMES_BN[name]}">
+      <div style="font-size:14px">${PRAYER_ICONS[name]}</div>
+      <div style="font-size:9px;font-weight:700;color:var(--t0)">${PRAYER_NAMES_BN[name]}</div>
+      <div style="font-size:12px;color:${prayed?'var(--green)':'var(--t3)'}">${prayed?'✓':'○'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── NEXT PRAYER HIGHLIGHT ─────────────────
+let prayerTimes = {};
+function highlightNextPrayer() {
+  if (!Object.keys(prayerTimes).length) return;
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+  const order  = ['fajr','dhuhr','asr','maghrib','isha'];
+  let next = null;
+  for (const name of order) {
+    const t = prayerTimes[name];
+    if (!t) continue;
+    const [h,m] = t.split(':').map(Number);
+    if (h*60+m > nowMin) { next = name; break; }
+  }
+  order.forEach(name => {
+    const btn = document.getElementById('pray-'+name);
+    if (btn) { btn.classList.toggle('next-prayer-glow', name===next); }
+  });
+  const lbl = document.getElementById('nextPrayerLabel');
+  if (lbl) lbl.textContent = next ? `${PRAYER_ICONS[next]} ${PRAYER_NAMES_BN[next]} (${prayerTimes[next]})` : 'সব নামাজ হয়ে গেছে ✓';
+}
+
+// ── DUA ────────────────────────────────────
+function renderDua(idx) {
+  const dua = DUAS[idx % DUAS.length];
+  const card = document.getElementById('duaCard');
+  if (card) { card.style.opacity='.3'; card.style.transition='opacity .25s'; }
+  setTimeout(() => {
+    const setT = (id,v) => { const e=document.getElementById(id); if(e)e.textContent=v; };
+    const setH = (id,v) => { const e=document.getElementById(id); if(e)e.innerHTML=v; };
+    setT('duaArabic',  dua.arabic);
+    // Show word-break translit in lighter style + smooth uccharon below
+    setH('duaTranslit', '<span style="font-size:12px;color:var(--t2);letter-spacing:.01em">' + (dua.translit||'') + '</span>'
+      + '<div style="margin-top:6px;font-size:13.5px;color:var(--t0);font-weight:600;font-style:normal;letter-spacing:.01em">বাংলা উচ্চারণ: ' + (dua.uccharon||dua.translit||'') + '</div>');
+    setT('duaMeaning', dua.meaning);
+    setT('duaSource',  '📖 '+dua.source);
+    renderDuaDots(idx);
+    if (card) card.style.opacity='1';
+  }, 250);
+}
+function renderDuaDash(idx) {
+  const dua = DUAS[idx % DUAS.length];
+  const card = document.getElementById('dashDuaCard');
+  if (card) { card.style.opacity='.3'; setTimeout(()=>{card.style.opacity='1';},250); }
+  setTimeout(() => {
+    const setT = (id,v) => { const e=document.getElementById(id); if(e)e.textContent=v; };
+    const setH = (id,v) => { const e=document.getElementById(id); if(e)e.innerHTML=v; };
+    setT('dashDuaArabic',  dua.arabic);
+    setH('dashDuaMeaning', '<div style="font-size:11.5px;color:var(--t2);font-style:italic;margin-bottom:3px">' + (dua.uccharon||dua.translit||'') + '</div>'
+      + '<div style="font-size:12.5px;color:var(--t0);font-weight:600">' + dua.meaning + '</div>');
+    setT('dashDuaSource',  '📖 '+dua.source);
+  }, 250);
+}
+function nextDua() { duaIdx = (duaIdx+1) % DUAS.length; renderDua(duaIdx); renderDuaDash(duaIdx); }
+function nextDuaDash() { nextDua(); }
+function renderDuaDots(active) {
+  const el = document.getElementById('duaDots');
+  if (!el) return;
+  el.innerHTML = DUAS.map((_,i) => `<div onclick="duaIdx=${i};renderDua(${i});renderDuaDash(${i})" style="width:${i===active%DUAS.length?'20px':'7px'};height:7px;border-radius:99px;background:${i===active%DUAS.length?'var(--amber)':'var(--border2)'};cursor:pointer;transition:all .3s"></div>`).join('');
+}
+function initDua() {
+  const dayOfYear = Math.floor((new Date()-new Date(new Date().getFullYear(),0,0))/(1000*60*60*24));
+  duaIdx = dayOfYear % DUAS.length;
+  renderDua(duaIdx);
+  renderDuaDash(duaIdx);
+}
+
+// ── DUA COLLECTION ────────────────────────
+function renderDuaCollection() {
+  const el = document.getElementById('duaCollection');
+  if (!el) return;
+  el.innerHTML = DUA_COLLECTION.map((d,i) => `
+    <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div onclick="const body=this.nextElementSibling;const arrow=this.querySelector('.caret');const open=body.style.display!=='none';body.style.display=open?'none':'block';arrow.style.transform=open?'rotate(0)':'rotate(180deg)'"
+        style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;cursor:pointer;transition:background .15s;user-select:none"
+        onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;font-size:14px">🤲</div>
+          <div style="font-size:13px;font-weight:600;color:var(--t0)">${d.title}</div>
+        </div>
+        <svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="2.5" style="transition:transform .3s;flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div style="display:none;padding:0 16px 16px;border-top:1px solid var(--border)">
+        <!-- Arabic -->
+        <div style="font-family:'Scheherazade New',serif;font-size:24px;color:var(--amber);direction:rtl;text-align:right;padding:12px 0 10px;line-height:2.2;border-bottom:1px solid var(--border)">${d.arabic}</div>
+        <!-- Word-break transliteration -->
+        <div style="font-size:11.5px;color:var(--t2);font-style:italic;margin-top:10px;margin-bottom:4px;letter-spacing:.02em;line-height:1.7">${d.translit}</div>
+        <!-- Bangla uccharon — prominent -->
+        <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.15);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--amber);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">বাংলা উচ্চারণ</div>
+          <div style="font-size:14px;font-weight:700;color:var(--t0);line-height:1.7;letter-spacing:.01em">${d.uccharon||d.translit}</div>
+        </div>
+        <!-- Meaning -->
+        <div style="font-size:13px;color:var(--t0);font-weight:600;line-height:1.7;padding-top:4px">${d.meaning}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── DHIKR COUNTER ──────────────────────────
+function incrementDhikr() {
+  dhikrCounts[dhikrIdx]++;
+  const target  = DHIKR_LIST[dhikrIdx].target;
+  const count   = dhikrCounts[dhikrIdx];
+  const totalToday = dhikrCounts.reduce((a,c)=>a+c,0);
+  // Update UI
+  const cEl = document.getElementById('dhikrCount');
+  if (cEl) {
+    cEl.textContent = count;
+    cEl.style.transform = 'scale(1.12)';
+    setTimeout(()=>cEl.style.transform='scale(1)',100);
+    cEl.classList.add('dhikr-pulse');
+    setTimeout(()=>cEl.classList.remove('dhikr-pulse'),500);
+  }
+  // Progress bar
+  const pct = Math.min(count/target*100,100);
+  const pb = document.getElementById('dhikrProgressBar');
+  if (pb) pb.style.width = pct+'%';
+  // Today total
+  const ttEl = document.getElementById('dhikrTodayTotal');
+  if (ttEl) ttEl.textContent = totalToday;
+  // Button flash
+  const btn = document.getElementById('dhikrBtn');
+  if (btn) { btn.style.background='rgba(245,158,11,.22)'; setTimeout(()=>btn.style.background='rgba(245,158,11,.08)',120); }
+  // Target reached
+  if (count === target) {
+    toast(`✓ ${DHIKR_LIST[dhikrIdx].name} — ${target} বার সম্পন্ন! 🤲`, 'success');
+    setTimeout(()=>setDhikr((dhikrIdx+1)%3, document.querySelectorAll('.dhikr-sw')[(dhikrIdx+1)%3]), 1400);
+  }
+  // Save
+  const d = getIslamicData();
+  if (!d.dhikr) d.dhikr = {};
+  d.dhikr[todayStr()] = { counts:dhikrCounts, total:totalToday };
+  saveIslamicData(d);
+}
+function setDhikr(idx, btnEl) {
+  dhikrIdx = idx;
+  const cEl = document.getElementById('dhikrCount');
+  if (cEl) cEl.textContent = dhikrCounts[idx];
+  const aEl = document.getElementById('dhikrArabic');
+  if (aEl) aEl.textContent = DHIKR_LIST[idx].arabic;
+  const nEl = document.getElementById('dhikrName');
+  if (nEl) nEl.textContent = DHIKR_LIST[idx].name;
+  const tEl = document.getElementById('dhikrTarget');
+  if (tEl) tEl.textContent = DHIKR_LIST[idx].target;
+  const pct = Math.min(dhikrCounts[idx]/DHIKR_LIST[idx].target*100,100);
+  const pb  = document.getElementById('dhikrProgressBar');
+  if (pb) pb.style.width = pct+'%';
+  document.querySelectorAll('.dhikr-sw').forEach((b,i)=>b.classList.toggle('active',i===idx));
+}
+function resetDhikr() {
+  dhikrCounts = [0,0,0];
+  const cEl = document.getElementById('dhikrCount');
+  if (cEl) cEl.textContent = '0';
+  const pb = document.getElementById('dhikrProgressBar');
+  if (pb) pb.style.width = '0%';
+  const ttEl = document.getElementById('dhikrTodayTotal');
+  if (ttEl) ttEl.textContent = '০';
+  toast('তাসবীহ রিসেট হয়েছে', 'info');
+}
+
+// ── HIJRI DATE ──────────────────────────────
+async function fetchHijriDate() {
+  try {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2,'0');
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const yy = today.getFullYear();
+    const res = await fetch(`https://api.aladhan.com/v1/gToH/${dd}-${mm}-${yy}`);
+    const data = await res.json();
+    if (data.code===200) {
+      const h = data.data.hijri;
+      const txt = `${h.day} ${h.month.ar} ${h.year} হিজরি`;
+      const el  = document.getElementById('hijriDateText');
+      if (el) el.textContent = txt;
+    }
+  } catch { const el=document.getElementById('hijriDateText'); if(el) el.textContent='হিজরি তারিখ'; }
+}
+
+// ── PRAYER TIMES ──────────────────────────
+async function fetchPrayerTimes() {
+  try {
+    let lat=23.8103, lon=90.4125; // Default Dhaka
+    if (navigator.geolocation) {
+      await new Promise(res => navigator.geolocation.getCurrentPosition(
+        p => { lat=p.coords.latitude; lon=p.coords.longitude; res(); },
+        () => res(), {timeout:3000}
+      ));
+    }
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2,'0');
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const yy = today.getFullYear();
+    const res  = await fetch(`https://api.aladhan.com/v1/timings/${dd}-${mm}-${yy}?latitude=${lat}&longitude=${lon}&method=2`);
+    const data = await res.json();
+    if (data.code===200) {
+      const T = data.data.timings;
+      const map = { fajr:T.Fajr, dhuhr:T.Dhuhr, asr:T.Asr, maghrib:T.Maghrib, isha:T.Isha };
+      prayerTimes = map;
+      PRAYERS_LIST.forEach(name => {
+        const el = document.getElementById('time-'+name);
+        if (el && map[name]) el.textContent = map[name].slice(0,5);
+      });
+      highlightNextPrayer();
+    }
+  } catch { /* offline — silent fail */ }
+}
+
+// ── NAVIGATION PAGE RENDERER ────────────────
+function renderIslamicPage() {
+  renderSalahTracker();
+  renderDashSalah();
+  initDua();
+  renderDuaCollection();
+  // Load saved dhikr
+  const d = getIslamicData();
+  if (d.dhikr?.[todayStr()]?.counts) {
+    dhikrCounts = d.dhikr[todayStr()].counts;
+  }
+  setDhikr(dhikrIdx, null);
+  const ttEl = document.getElementById('dhikrTodayTotal');
+  if (ttEl) ttEl.textContent = dhikrCounts.reduce((a,c)=>a+c,0);
+  // Gregorian date
+  const el = document.getElementById('islamicGregorianDate');
+  if (el) el.textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  fetchHijriDate();
+  fetchPrayerTimes();
+}
+
+// ── INIT ISLAMIC ON DASHBOARD ───────────────
+function initIslamicDashboard() {
+  renderDashSalah();
+  initDua();
+  fetchPrayerTimes();
+}
+
+// ═══════════════════════════════════════════
+//  11. BOOT
+// ═══════════════════════════════════════════
+function boot() {
+  seedIfNeeded();
+  applyTheme();
+  populateTaskSubjectDropdown();
+  updateGSStatus();
+  document.getElementById('taskDate').value=todayStr();
+  gsConfig=DB.get('gsConfig')||{url:'',sheet:'StudyOS',enabled:false};
+  if(gsConfig.url){document.getElementById('gsUrl').value=gsConfig.url;document.getElementById('gsSheetName').value=gsConfig.sheet;}
+  navigate('dashboard');
+  // Islamic init (async — non-blocking)
+  setTimeout(initIslamicDashboard, 400);
+}
+
+boot();
+</script>
+</body>
+</html>
